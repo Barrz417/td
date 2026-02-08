@@ -743,16 +743,18 @@ static void check_fix_formatted_text(td::string str, td::vector<td::MessageEntit
                                      const td::vector<td::MessageEntity> &expected_entities, bool allow_empty = true,
                                      bool skip_new_entities = false, bool skip_bot_commands = false,
                                      bool skip_trim = true) {
-  ASSERT_TRUE(td::fix_formatted_text(str, entities, allow_empty, skip_new_entities, skip_bot_commands, true, skip_trim)
-                  .is_ok());
+  ASSERT_TRUE(
+      td::fix_formatted_text(str, entities, allow_empty, false, skip_new_entities, skip_bot_commands, true, skip_trim)
+          .is_ok());
   ASSERT_STREQ(expected_str, str);
   ASSERT_EQ(expected_entities, entities);
 }
 
 static void check_fix_formatted_text(td::string str, td::vector<td::MessageEntity> entities, bool allow_empty,
                                      bool skip_new_entities, bool skip_bot_commands, bool skip_trim) {
-  ASSERT_TRUE(td::fix_formatted_text(str, entities, allow_empty, skip_new_entities, skip_bot_commands, true, skip_trim)
-                  .is_error());
+  ASSERT_TRUE(
+      td::fix_formatted_text(str, entities, allow_empty, false, skip_new_entities, skip_bot_commands, true, skip_trim)
+          .is_error());
 }
 
 TEST(MessageEntities, fix_formatted_text) {
@@ -1155,7 +1157,7 @@ TEST(MessageEntities, fix_formatted_text) {
       return result;
     };
     auto old_type_mask = get_type_mask(str.size(), entities);
-    ASSERT_TRUE(td::fix_formatted_text(str, entities, false, false, true, true, false).is_ok());
+    ASSERT_TRUE(td::fix_formatted_text(str, entities, false, false, false, true, true, false).is_ok());
     auto new_type_mask = get_type_mask(str.size(), entities);
     auto splittable_mask = (1 << 5) | (1 << 6) | (1 << 14) | (1 << 15) | (1 << 19);
     auto pre_mask = (1 << 7) | (1 << 8) | (1 << 9);
@@ -1234,7 +1236,7 @@ TEST(MessageEntities, is_visible_url) {
   td::vector<td::MessageEntity> entities;
   entities.emplace_back(td::MessageEntity::Type::TextUrl, 0, 1, "telegrab.org");
   entities.emplace_back(td::MessageEntity::Type::TextUrl, static_cast<td::int32>(str.size()) - 1, 1, "telegrax.org");
-  td::fix_formatted_text(str, entities, false, false, false, false, true).ensure();
+  td::fix_formatted_text(str, entities, false, false, false, false, false, true).ensure();
   td::FormattedText text{std::move(str), std::move(entities)};
   ASSERT_EQ(td::get_first_url(text), "telegrab.org");
   ASSERT_TRUE(!td::is_visible_url(text, "telegrab.org"));
@@ -1598,7 +1600,8 @@ static void check_parse_markdown_v3(td::string text, td::vector<td::MessageEntit
                                     bool fix = false) {
   auto parsed_text = td::parse_markdown_v3({std::move(text), std::move(entities)});
   if (fix) {
-    ASSERT_TRUE(td::fix_formatted_text(parsed_text.text, parsed_text.entities, true, true, true, true, true).is_ok());
+    ASSERT_TRUE(
+        td::fix_formatted_text(parsed_text.text, parsed_text.entities, true, true, true, true, true, true).is_ok());
   }
   ASSERT_STREQ(result_text, parsed_text.text);
   ASSERT_EQ(result_entities, parsed_text.entities);
@@ -1945,9 +1948,10 @@ TEST(MessageEntities, parse_markdown_v3) {
 
     td::FormattedText text{std::move(str), std::move(entities)};
     while (true) {
-      ASSERT_TRUE(td::fix_formatted_text(text.text, text.entities, true, true, true, true, true).is_ok());
+      ASSERT_TRUE(td::fix_formatted_text(text.text, text.entities, true, true, true, true, true, true).is_ok());
       auto parsed_text = td::parse_markdown_v3(text);
-      ASSERT_TRUE(td::fix_formatted_text(parsed_text.text, parsed_text.entities, true, true, true, true, true).is_ok());
+      ASSERT_TRUE(
+          td::fix_formatted_text(parsed_text.text, parsed_text.entities, true, true, true, true, true, true).is_ok());
       if (parsed_text == text) {
         break;
       }

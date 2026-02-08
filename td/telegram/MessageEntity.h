@@ -231,8 +231,8 @@ FormattedText get_formatted_text(const UserManager *user_manager,
 void fix_entities(vector<MessageEntity> &entities);
 
 // like clean_input_string but also validates entities
-Status fix_formatted_text(string &text, vector<MessageEntity> &entities, bool allow_empty, bool skip_new_entities,
-                          bool skip_bot_commands, bool skip_media_timestamps, bool skip_trim,
+Status fix_formatted_text(string &text, vector<MessageEntity> &entities, bool allow_empty, bool allow_empty_string,
+                          bool skip_new_entities, bool skip_bot_commands, bool skip_media_timestamps, bool skip_trim,
                           int32 *ltrim_count = nullptr) TD_WARN_UNUSED_RESULT;
 
 FormattedText get_message_text(const UserManager *user_manager, string message_text,

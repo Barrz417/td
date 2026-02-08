@@ -8416,7 +8416,8 @@ unique_ptr<MessageContent> get_secret_message_content(
   }
 
   auto entities = get_message_entities(td, std::move(secret_entities), is_premium, load_data_multipromise);
-  auto status = fix_formatted_text(message_text, entities, true, false, true, td->auth_manager_->is_bot(), false);
+  auto status =
+      fix_formatted_text(message_text, entities, true, false, false, true, td->auth_manager_->is_bot(), false);
   if (status.is_error()) {
     LOG(WARNING) << "Receive error " << status << " while parsing secret message \"" << message_text
                  << "\" with entities " << entities;

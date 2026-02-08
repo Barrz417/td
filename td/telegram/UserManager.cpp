@@ -9976,7 +9976,7 @@ td_api::object_ptr<td_api::userFullInfo> UserManager::get_user_full_info_object(
   td_api::object_ptr<td_api::formattedText> note;
   if (is_contact && !user_full->note.text.empty()) {
     auto user_note = user_full->note;
-    if (fix_formatted_text(user_note.text, user_note.entities, false, false, true, true, false).is_ok()) {
+    if (fix_formatted_text(user_note.text, user_note.entities, false, false, false, true, true, false).is_ok()) {
       note = get_formatted_text_object(this, user_note, true, -1);
     }
   }

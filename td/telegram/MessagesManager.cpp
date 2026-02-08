@@ -30388,7 +30388,7 @@ MessagesManager::Message *MessagesManager::add_message_to_dialog(Dialog *d, uniq
     if (from_database && !td_->auth_manager_->is_bot()) {  // otherwise the entities were found in get_message_text
       auto text = get_message_content_text_mutable(message->content.get());
       if (text != nullptr) {
-        fix_formatted_text(text->text, text->entities, true, true, true, false, false).ensure();
+        fix_formatted_text(text->text, text->entities, true, false, true, true, false, false).ensure();
         // always call to save are_media_timestamp_entities_found flag
         on_message_changed(d, message.get(), false, "save media timestamp entities");
       }

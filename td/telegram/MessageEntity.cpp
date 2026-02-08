@@ -4014,7 +4014,7 @@ FormattedText get_formatted_text(const UserManager *user_manager, string &&text,
                                  vector<telegram_api::object_ptr<telegram_api::MessageEntity>> &&server_entities,
                                  bool skip_media_timestamps, bool skip_trim, const char *source) {
   auto entities = get_message_entities(user_manager, std::move(server_entities), source);
-  auto status = fix_formatted_text(text, entities, true, true, true, skip_media_timestamps, skip_trim);
+  auto status = fix_formatted_text(text, entities, true, false, true, true, skip_media_timestamps, skip_trim);
   if (status.is_error()) {
     LOG(ERROR) << "Receive error " << status << " from " << source << " while parsing \"" << text << "\"("
                << hex_encode(text) << ')';
@@ -4391,8 +4391,9 @@ static void merge_new_entities(vector<MessageEntity> &entities, vector<MessageEn
   check_is_sorted(entities);
 }
 
-Status fix_formatted_text(string &text, vector<MessageEntity> &entities, bool allow_empty, bool skip_new_entities,
-                          bool skip_bot_commands, bool skip_media_timestamps, bool skip_trim, int32 *ltrim_count) {
+Status fix_formatted_text(string &text, vector<MessageEntity> &entities, bool allow_empty, bool allow_empty_string,
+                          bool skip_new_entities, bool skip_bot_commands, bool skip_media_timestamps, bool skip_trim,
+                          int32 *ltrim_count) {
   string result;
   if (entities.empty()) {
     // fast path
@@ -4491,8 +4492,10 @@ Status fix_formatted_text(string &text, vector<MessageEntity> &entities, bool al
     if (!allow_empty) {
       return Status::Error(400, "Text must be non-empty");
     }
-    text.clear();
-    entities.clear();
+    if (!allow_empty_string) {
+      text.clear();
+      entities.clear();
+    }
   }
 
   constexpr size_t LENGTH_LIMIT = 35000;  // server-side limit
@@ -4524,7 +4527,8 @@ FormattedText get_message_text(const UserManager *user_manager, string message_t
   auto entities = get_message_entities(user_manager, std::move(server_entities), source);
   auto debug_message_text = message_text;
   auto debug_entities = entities;
-  auto status = fix_formatted_text(message_text, entities, true, skip_new_entities, true, skip_media_timestamps, false);
+  auto status =
+      fix_formatted_text(message_text, entities, true, false, skip_new_entities, true, skip_media_timestamps, false);
   if (status.is_error()) {
     // message entities in media albums can be wrong because of a long time ago fixed server-side bug
     if (!from_album && (send_date == 0 || send_date > 1600340000)) {  // approximate fix date
@@ -4575,14 +4579,14 @@ Result<FormattedText> get_formatted_text(const Td *td, DialogId dialog_id,
   auto need_skip_bot_commands = need_always_skip_bot_commands(td->user_manager_.get(), dialog_id, is_bot);
   bool parse_markdown = td->option_manager_->get_option_boolean("always_parse_markdown");
   bool skip_new_entities = is_bot && td->option_manager_->get_option_integer("session_count") > 1;
-  TRY_STATUS(fix_formatted_text(text->text_, entities, allow_empty, skip_new_entities || parse_markdown,
-                                skip_new_entities || need_skip_bot_commands,
+  TRY_STATUS(fix_formatted_text(text->text_, entities, allow_empty, allow_empty && is_bot,
+                                skip_new_entities || parse_markdown, skip_new_entities || need_skip_bot_commands,
                                 is_bot || skip_media_timestamps || parse_markdown, skip_trim, ltrim_count));
 
   FormattedText result{std::move(text->text_), std::move(entities)};
   if (parse_markdown) {
     result = parse_markdown_v3(std::move(result));
-    fix_formatted_text(result.text, result.entities, allow_empty, false, need_skip_bot_commands,
+    fix_formatted_text(result.text, result.entities, allow_empty, allow_empty && is_bot, false, need_skip_bot_commands,
                        is_bot || skip_media_timestamps, skip_trim, nullptr)
         .ensure();
   }

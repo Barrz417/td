@@ -2726,7 +2726,7 @@ unique_ptr<LinkManager::InternalLink> LinkManager::get_internal_link_message_dra
   } else {
     full_text.text = url.str();
   }
-  if (fix_formatted_text(full_text.text, full_text.entities, false, false, false, true, true).is_error()) {
+  if (fix_formatted_text(full_text.text, full_text.entities, false, false, false, false, true, true).is_error()) {
     return nullptr;
   }
   if (full_text.text[0] == '@') {
