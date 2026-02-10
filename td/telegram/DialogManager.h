@@ -173,6 +173,10 @@ class DialogManager final : public Actor {
 
   CustomEmojiId get_dialog_profile_background_custom_emoji_id(DialogId dialog_id) const;
 
+  DialogParticipantStatus get_dialog_status(DialogId dialog_id) const;
+
+  DialogParticipantStatus get_dialog_permissions(DialogId dialog_id) const;
+
   RestrictedRights get_dialog_default_permissions(DialogId dialog_id) const;
 
   td_api::object_ptr<td_api::emojiStatus> get_dialog_emoji_status_object(DialogId dialog_id) const;
