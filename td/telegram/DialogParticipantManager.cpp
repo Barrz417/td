@@ -744,18 +744,18 @@ class CanEditChatCreatorQuery final : public Td::ResultHandler {
 
 class EditChatCreatorQuery final : public Td::ResultHandler {
   Promise<Unit> promise_;
-  ChannelId channel_id_;
+  DialogId dialog_id_;
   UserId user_id_;
 
  public:
   explicit EditChatCreatorQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
   }
 
-  void send(ChannelId channel_id, UserId user_id,
+  void send(DialogId dialog_id, UserId user_id,
             tl_object_ptr<telegram_api::InputCheckPasswordSRP> input_check_password) {
-    channel_id_ = channel_id;
+    dialog_id_ = dialog_id;
     user_id_ = user_id;
-    auto input_peer = td_->dialog_manager_->get_input_peer(DialogId(channel_id), AccessRights::Read);
+    auto input_peer = td_->dialog_manager_->get_input_peer(dialog_id, AccessRights::Read);
     if (input_peer == nullptr) {
       return on_error(Status::Error(400, "Have no access to the chat"));
     }
@@ -763,7 +763,7 @@ class EditChatCreatorQuery final : public Td::ResultHandler {
     send_query(G()->net_query_creator().create(
         telegram_api::messages_editChatCreator(std::move(input_peer), std::move(input_user),
                                                std::move(input_check_password)),
-        {{channel_id}}));
+        {{dialog_id}}));
   }
 
   void on_result(BufferSlice packet) final {
@@ -774,12 +774,14 @@ class EditChatCreatorQuery final : public Td::ResultHandler {
 
     auto ptr = result_ptr.move_as_ok();
     LOG(INFO) << "Receive result for EditChatCreatorQuery: " << to_string(ptr);
-    td_->chat_manager_->invalidate_channel_full(channel_id_, false, "EditChatCreatorQuery");
+    if (dialog_id_.get_type() == DialogType::Channel) {
+      td_->chat_manager_->invalidate_channel_full(dialog_id_.get_channel_id(), false, "EditChatCreatorQuery");
+    }
     td_->updates_manager_->on_get_updates(std::move(ptr), std::move(promise_));
   }
 
   void on_error(Status status) final {
-    td_->chat_manager_->on_get_channel_error(channel_id_, status, "EditChatCreatorQuery");
+    td_->dialog_manager_->on_get_dialog_error(dialog_id_, status, "EditChatCreatorQuery");
     promise_.set_error(std::move(status));
   }
 };
@@ -3049,9 +3051,8 @@ DialogParticipantManager::get_can_transfer_ownership_result_object(CanTransferOw
 
 void DialogParticipantManager::transfer_dialog_ownership(DialogId dialog_id, UserId user_id, const string &password,
                                                          Promise<Unit> &&promise) {
-  if (!td_->dialog_manager_->have_dialog_force(dialog_id, "transfer_dialog_ownership")) {
-    return promise.set_error(400, "Chat not found");
-  }
+  TRY_STATUS_PROMISE(promise, td_->dialog_manager_->check_dialog_access(dialog_id, true, AccessRights::Read,
+                                                                        "transfer_dialog_ownership"));
   if (!td_->user_manager_->have_user_force(user_id, "transfer_dialog_ownership")) {
     return promise.set_error(400, "User not found");
   }
@@ -3067,19 +3068,18 @@ void DialogParticipantManager::transfer_dialog_ownership(DialogId dialog_id, Use
 
   switch (dialog_id.get_type()) {
     case DialogType::User:
-    case DialogType::Chat:
     case DialogType::SecretChat:
       return promise.set_error(400, "Can't transfer chat ownership");
+    case DialogType::Chat:
     case DialogType::Channel:
       send_closure(
           td_->password_manager_, &PasswordManager::get_input_check_password_srp, password,
-          PromiseCreator::lambda([actor_id = actor_id(this), channel_id = dialog_id.get_channel_id(), user_id,
-                                  promise = std::move(promise)](
+          PromiseCreator::lambda([actor_id = actor_id(this), dialog_id, user_id, promise = std::move(promise)](
                                      Result<tl_object_ptr<telegram_api::InputCheckPasswordSRP>> result) mutable {
             if (result.is_error()) {
               return promise.set_error(result.move_as_error());
             }
-            send_closure(actor_id, &DialogParticipantManager::transfer_channel_ownership, channel_id, user_id,
+            send_closure(actor_id, &DialogParticipantManager::transfer_chat_ownership, dialog_id, user_id,
                          result.move_as_ok(), std::move(promise));
           }));
       break;
@@ -3089,13 +3089,13 @@ void DialogParticipantManager::transfer_dialog_ownership(DialogId dialog_id, Use
   }
 }
 
-void DialogParticipantManager::transfer_channel_ownership(
-    ChannelId channel_id, UserId user_id,
+void DialogParticipantManager::transfer_chat_ownership(
+    DialogId dialog_id, UserId user_id,
     telegram_api::object_ptr<telegram_api::InputCheckPasswordSRP> input_check_password, Promise<Unit> &&promise) {
   TRY_STATUS_PROMISE(promise, G()->close_status());
 
   td_->create_handler<EditChatCreatorQuery>(std::move(promise))
-      ->send(channel_id, user_id, std::move(input_check_password));
+      ->send(dialog_id, user_id, std::move(input_check_password));
 }
 
 void DialogParticipantManager::get_future_creator_after_leave(DialogId dialog_id,
