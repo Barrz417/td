@@ -3862,6 +3862,9 @@ vector<MessageEntity> get_message_entities(const UserManager *user_manager,
                               CustomEmojiId(entity->document_id_));
         break;
       }
+      case telegram_api::messageEntityFormattedDate::ID: {
+        break;
+      }
       default:
         UNREACHABLE();
     }

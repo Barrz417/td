@@ -408,7 +408,7 @@ class ToggleNoForwardsQuery final : public Td::ResultHandler {
     auto input_peer = td_->dialog_manager_->get_input_peer(dialog_id, AccessRights::Read);
     CHECK(input_peer != nullptr);
     send_query(G()->net_query_creator().create(
-        telegram_api::messages_toggleNoForwards(std::move(input_peer), has_protected_content), {{dialog_id_}}));
+        telegram_api::messages_toggleNoForwards(0, std::move(input_peer), has_protected_content, 0), {{dialog_id_}}));
   }
 
   void on_result(BufferSlice packet) final {

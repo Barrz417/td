@@ -608,7 +608,7 @@ class EditChannelAdminQuery final : public Td::ResultHandler {
     auto input_channel = td_->chat_manager_->get_input_channel(channel_id);
     CHECK(input_channel != nullptr);
     send_query(G()->net_query_creator().create(telegram_api::channels_editAdmin(
-        std::move(input_channel), std::move(input_user), status.get_chat_admin_rights(), status.get_rank())));
+        0, std::move(input_channel), std::move(input_user), status.get_chat_admin_rights(), string())));
   }
 
   void on_result(BufferSlice packet) final {
@@ -711,29 +711,29 @@ class LeaveChannelQuery final : public Td::ResultHandler {
   }
 };
 
-class CanEditChannelCreatorQuery final : public Td::ResultHandler {
+class CanEditChatCreatorQuery final : public Td::ResultHandler {
   Promise<Unit> promise_;
 
  public:
-  explicit CanEditChannelCreatorQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
+  explicit CanEditChatCreatorQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
   }
 
   void send() {
     auto r_input_user = td_->user_manager_->get_input_user(td_->user_manager_->get_my_id());
     CHECK(r_input_user.is_ok());
-    send_query(G()->net_query_creator().create(telegram_api::channels_editCreator(
-        telegram_api::make_object<telegram_api::inputChannelEmpty>(), r_input_user.move_as_ok(),
+    send_query(G()->net_query_creator().create(telegram_api::messages_editChatCreator(
+        telegram_api::make_object<telegram_api::inputPeerEmpty>(), r_input_user.move_as_ok(),
         make_tl_object<telegram_api::inputCheckPasswordEmpty>())));
   }
 
   void on_result(BufferSlice packet) final {
-    auto result_ptr = fetch_result<telegram_api::channels_editCreator>(packet);
+    auto result_ptr = fetch_result<telegram_api::messages_editChatCreator>(packet);
     if (result_ptr.is_error()) {
       return on_error(result_ptr.move_as_error());
     }
 
     auto ptr = result_ptr.move_as_ok();
-    LOG(ERROR) << "Receive result for CanEditChannelCreatorQuery: " << to_string(ptr);
+    LOG(ERROR) << "Receive result for CanEditChatCreatorQuery: " << to_string(ptr);
     promise_.set_error(500, "Server doesn't returned error");
   }
 
@@ -742,44 +742,44 @@ class CanEditChannelCreatorQuery final : public Td::ResultHandler {
   }
 };
 
-class EditChannelCreatorQuery final : public Td::ResultHandler {
+class EditChatCreatorQuery final : public Td::ResultHandler {
   Promise<Unit> promise_;
   ChannelId channel_id_;
   UserId user_id_;
 
  public:
-  explicit EditChannelCreatorQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
+  explicit EditChatCreatorQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
   }
 
   void send(ChannelId channel_id, UserId user_id,
             tl_object_ptr<telegram_api::InputCheckPasswordSRP> input_check_password) {
     channel_id_ = channel_id;
     user_id_ = user_id;
-    auto input_channel = td_->chat_manager_->get_input_channel(channel_id);
-    if (input_channel == nullptr) {
-      return promise_.set_error(400, "Have no access to the chat");
+    auto input_peer = td_->dialog_manager_->get_input_peer(DialogId(channel_id), AccessRights::Read);
+    if (input_peer == nullptr) {
+      return on_error(Status::Error(400, "Have no access to the chat"));
     }
     TRY_RESULT_PROMISE(promise_, input_user, td_->user_manager_->get_input_user(user_id));
     send_query(G()->net_query_creator().create(
-        telegram_api::channels_editCreator(std::move(input_channel), std::move(input_user),
-                                           std::move(input_check_password)),
+        telegram_api::messages_editChatCreator(std::move(input_peer), std::move(input_user),
+                                               std::move(input_check_password)),
         {{channel_id}}));
   }
 
   void on_result(BufferSlice packet) final {
-    auto result_ptr = fetch_result<telegram_api::channels_editCreator>(packet);
+    auto result_ptr = fetch_result<telegram_api::messages_editChatCreator>(packet);
     if (result_ptr.is_error()) {
       return on_error(result_ptr.move_as_error());
     }
 
     auto ptr = result_ptr.move_as_ok();
-    LOG(INFO) << "Receive result for EditChannelCreatorQuery: " << to_string(ptr);
-    td_->chat_manager_->invalidate_channel_full(channel_id_, false, "EditChannelCreatorQuery");
+    LOG(INFO) << "Receive result for EditChatCreatorQuery: " << to_string(ptr);
+    td_->chat_manager_->invalidate_channel_full(channel_id_, false, "EditChatCreatorQuery");
     td_->updates_manager_->on_get_updates(std::move(ptr), std::move(promise_));
   }
 
   void on_error(Status status) final {
-    td_->chat_manager_->on_get_channel_error(channel_id_, status, "EditChannelCreatorQuery");
+    td_->chat_manager_->on_get_channel_error(channel_id_, status, "EditChatCreatorQuery");
     promise_.set_error(std::move(status));
   }
 };
@@ -795,14 +795,16 @@ class GetFutureChannelCreatorAfterLeaveQuery final : public Td::ResultHandler {
 
   void send(ChannelId channel_id) {
     channel_id_ = channel_id;
-    auto input_channel = td_->chat_manager_->get_input_channel(channel_id);
-    CHECK(input_channel != nullptr);
+    auto input_peer = td_->dialog_manager_->get_input_peer(DialogId(channel_id), AccessRights::Read);
+    if (input_peer == nullptr) {
+      return on_error(Status::Error(400, "Have no access to the chat"));
+    }
     send_query(G()->net_query_creator().create(
-        telegram_api::channels_getFutureCreatorAfterLeave(std::move(input_channel)), {{channel_id}}));
+        telegram_api::messages_getFutureChatCreatorAfterLeave(std::move(input_peer)), {{channel_id}}));
   }
 
   void on_result(BufferSlice packet) final {
-    auto result_ptr = fetch_result<telegram_api::channels_getFutureCreatorAfterLeave>(packet);
+    auto result_ptr = fetch_result<telegram_api::messages_getFutureChatCreatorAfterLeave>(packet);
     if (result_ptr.is_error()) {
       return on_error(result_ptr.move_as_error());
     }
@@ -3025,7 +3027,7 @@ void DialogParticipantManager::can_transfer_ownership(Promise<CanTransferOwnersh
     promise.set_error(std::move(error));
   });
 
-  td_->create_handler<CanEditChannelCreatorQuery>(std::move(request_promise))->send();
+  td_->create_handler<CanEditChatCreatorQuery>(std::move(request_promise))->send();
 }
 
 td_api::object_ptr<td_api::CanTransferOwnershipResult>
@@ -3092,7 +3094,7 @@ void DialogParticipantManager::transfer_channel_ownership(
     telegram_api::object_ptr<telegram_api::InputCheckPasswordSRP> input_check_password, Promise<Unit> &&promise) {
   TRY_STATUS_PROMISE(promise, G()->close_status());
 
-  td_->create_handler<EditChannelCreatorQuery>(std::move(promise))
+  td_->create_handler<EditChatCreatorQuery>(std::move(promise))
       ->send(channel_id, user_id, std::move(input_check_password));
 }
 

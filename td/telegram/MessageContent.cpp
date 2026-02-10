@@ -9282,6 +9282,8 @@ unique_ptr<MessageContent> get_action_message_content(Td *td, tl_object_ptr<tele
       case telegram_api::messageActionSuggestBirthday::ID:
       case telegram_api::messageActionStarGiftPurchaseOffer::ID:
       case telegram_api::messageActionStarGiftPurchaseOfferDeclined::ID:
+      case telegram_api::messageActionNoForwardsToggle::ID:
+      case telegram_api::messageActionNoForwardsRequest::ID:
         // ok
         break;
       default:
@@ -10000,6 +10002,10 @@ unique_ptr<MessageContent> get_action_message_content(Td *td, tl_object_ptr<tele
       }
       return td::make_unique<MessageChangeCreator>(new_creator_user_id);
     }
+    case telegram_api::messageActionNoForwardsToggle::ID:
+      return td::make_unique<MessageUnsupported>();
+    case telegram_api::messageActionNoForwardsRequest::ID:
+      return td::make_unique<MessageUnsupported>();
     default:
       UNREACHABLE();
   }

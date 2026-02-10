@@ -1601,8 +1601,8 @@ class RequestUrlAuthQuery final : public Td::ResultHandler {
       flags |= telegram_api::messages_requestUrlAuth::URL_MASK;
     }
     send_query(G()->net_query_creator().create(telegram_api::messages_requestUrlAuth(
-        flags, std::move(input_peer), message_full_id.get_message_id().get_server_message_id().get(), button_id,
-        url_)));
+        flags, std::move(input_peer), message_full_id.get_message_id().get_server_message_id().get(), button_id, url_,
+        string())));
   }
 
   void on_result(BufferSlice packet) final {
@@ -1674,7 +1674,7 @@ class AcceptUrlAuthQuery final : public Td::ResultHandler {
     }
     send_query(G()->net_query_creator().create(telegram_api::messages_acceptUrlAuth(
         flags, allow_write_access, allow_phone_number_access, std::move(input_peer),
-        message_full_id.get_message_id().get_server_message_id().get(), button_id, url_)));
+        message_full_id.get_message_id().get_server_message_id().get(), button_id, url_, string())));
   }
 
   void on_result(BufferSlice packet) final {
