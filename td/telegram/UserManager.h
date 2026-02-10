@@ -313,7 +313,7 @@ class UserManager final : public Actor {
 
   td_api::object_ptr<td_api::emojiStatus> get_secret_chat_emoji_status_object(SecretChatId secret_chat_id) const;
 
-  bool get_user_has_protected_content(UserId user_id);
+  bool get_user_has_protected_content(UserId user_id, bool only_my);
 
   bool get_user_stories_hidden(UserId user_id) const;
 

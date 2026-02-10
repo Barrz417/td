@@ -2193,10 +2193,10 @@ string DialogManager::get_dialog_search_text(DialogId dialog_id) const {
   return string();
 }
 
-bool DialogManager::get_dialog_has_protected_content(DialogId dialog_id) const {
+bool DialogManager::get_dialog_has_protected_content(DialogId dialog_id, bool only_my) const {
   switch (dialog_id.get_type()) {
     case DialogType::User:
-      return td_->user_manager_->get_user_has_protected_content(dialog_id.get_user_id());
+      return td_->user_manager_->get_user_has_protected_content(dialog_id.get_user_id(), only_my);
     case DialogType::Chat:
       return td_->chat_manager_->get_chat_has_protected_content(dialog_id.get_chat_id());
     case DialogType::Channel:
@@ -2626,7 +2626,7 @@ void DialogManager::toggle_dialog_has_protected_content(DialogId dialog_id, bool
 
   switch (dialog_id.get_type()) {
     case DialogType::User:
-      return promise.set_error(400, "Can't restrict saving content in the chat");
+      break;
     case DialogType::Chat: {
       auto chat_id = dialog_id.get_chat_id();
       auto status = td_->chat_manager_->get_chat_status(chat_id);
@@ -2649,7 +2649,7 @@ void DialogManager::toggle_dialog_has_protected_content(DialogId dialog_id, bool
   }
 
   // TODO this can be wrong if there were previous toggle_dialog_has_protected_content requests
-  if (get_dialog_has_protected_content(dialog_id) == has_protected_content) {
+  if (get_dialog_has_protected_content(dialog_id, true) == has_protected_content) {
     return promise.set_value(Unit());
   }
 
