@@ -748,6 +748,7 @@ class UserManager final : public Actor {
     bool is_common_chat_count_changed = true;
     bool is_pending_star_rating_changed = true;
     bool is_first_saved_music_file_id_changed = true;
+    bool is_has_protected_content_changed = false;
     bool is_being_updated = false;
     bool is_changed = true;             // have new changes that need to be sent to the client and database
     bool need_send_update = true;       // have new changes that need only to be sent to the client

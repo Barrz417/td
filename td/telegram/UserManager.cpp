@@ -4374,6 +4374,9 @@ void UserManager::on_update_user_full_noforwards(UserFull *user_full, bool nofor
   CHECK(user_full != nullptr);
   if (user_full->noforwards_my_enabled != noforwards_my_enabled ||
       user_full->noforwards_peer_enabled != noforwards_peer_enabled) {
+    if (user_full->noforwards_my_enabled || user_full->noforwards_peer_enabled != noforwards_my_enabled || noforwards_peer_enabled) {
+      user_full->is_has_protected_content_changed = true;
+    }
     user_full->noforwards_my_enabled = noforwards_my_enabled;
     user_full->noforwards_peer_enabled = noforwards_peer_enabled;
     user_full->is_changed = true;
@@ -9725,6 +9728,10 @@ void UserManager::update_user_full(UserFull *user_full, UserId user_id, const ch
   if (user_full->is_first_saved_music_file_id_changed) {
     register_user_saved_music(user_id, user_full->first_saved_music_file_id);
     user_full->is_first_saved_music_file_id_changed = false;
+  }
+  if (user_full->is_has_protected_content_changed) {
+    td_->messages_manager_->on_dialog_has_protected_content_updated(DialogId(user_id));
+    user_full->is_has_protected_content_changed = false;
   }
   if (true) {
     vector<FileId> file_ids;
