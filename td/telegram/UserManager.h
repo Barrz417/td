@@ -186,6 +186,8 @@ class UserManager final : public Actor {
 
   void on_update_user_wallpaper_overridden(UserId user_id, bool wallpaper_overridden);
 
+  void on_update_user_noforwards(UserId user_id, bool noforwards_my_enabled, bool noforwards_peer_enabled);
+
   void on_update_user_note(UserId user_id, FormattedText &&note);
 
   void on_update_bot_menu_button(UserId bot_user_id,
@@ -730,6 +732,8 @@ class UserManager final : public Actor {
     bool can_pin_messages = true;
     bool need_phone_number_privacy_exception = false;
     bool wallpaper_overridden = false;
+    bool noforwards_my_enabled = false;
+    bool noforwards_peer_enabled = false;
     bool voice_messages_forbidden = false;
     bool has_pinned_stories = false;
     bool read_dates_private = false;
@@ -975,6 +979,9 @@ class UserManager final : public Actor {
   void on_update_user_full_send_paid_message_stars(UserFull *user_full, int64 send_paid_message_stars) const;
 
   void on_update_user_full_wallpaper_overridden(UserFull *user_full, bool wallpaper_overridden) const;
+
+  void on_update_user_full_noforwards(UserFull *user_full, bool noforwards_my_enabled,
+                                      bool noforwards_peer_enabled) const;
 
   static void on_update_user_full_menu_button(UserFull *user_full,
                                               telegram_api::object_ptr<telegram_api::BotMenuButton> &&bot_menu_button);

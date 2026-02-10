@@ -2211,6 +2211,8 @@ void UserManager::UserFull::store(StorerT &storer) const {
     STORE_FLAG(has_main_profile_tab);
     STORE_FLAG(has_first_saved_music_file_id);
     STORE_FLAG(has_note);
+    STORE_FLAG(noforwards_my_enabled);
+    STORE_FLAG(noforwards_peer_enabled);
     END_STORE_FLAGS();
   }
   if (has_about) {
@@ -2413,6 +2415,8 @@ void UserManager::UserFull::parse(ParserT &parser) {
     PARSE_FLAG(has_main_profile_tab);
     PARSE_FLAG(has_first_saved_music_file_id);
     PARSE_FLAG(has_note);
+    PARSE_FLAG(noforwards_my_enabled);
+    PARSE_FLAG(noforwards_peer_enabled);
     END_PARSE_FLAGS();
   }
   if (has_about) {
@@ -4347,6 +4351,31 @@ void UserManager::on_update_user_full_wallpaper_overridden(UserFull *user_full, 
   CHECK(user_full != nullptr);
   if (user_full->wallpaper_overridden != wallpaper_overridden) {
     user_full->wallpaper_overridden = wallpaper_overridden;
+    user_full->is_changed = true;
+  }
+}
+
+void UserManager::on_update_user_noforwards(UserId user_id, bool noforwards_my_enabled, bool noforwards_peer_enabled) {
+  if (!user_id.is_valid()) {
+    LOG(ERROR) << "Receive invalid " << user_id;
+    return;
+  }
+
+  UserFull *user_full = get_user_full_force(user_id, "on_update_user_noforwards");
+  if (user_full == nullptr) {
+    return;
+  }
+  on_update_user_full_noforwards(user_full, noforwards_my_enabled, noforwards_peer_enabled);
+  update_user_full(user_full, user_id, "on_update_user_noforwards");
+}
+
+void UserManager::on_update_user_full_noforwards(UserFull *user_full, bool noforwards_my_enabled,
+                                                 bool noforwards_peer_enabled) const {
+  CHECK(user_full != nullptr);
+  if (user_full->noforwards_my_enabled != noforwards_my_enabled ||
+      user_full->noforwards_peer_enabled != noforwards_peer_enabled) {
+    user_full->noforwards_my_enabled = noforwards_my_enabled;
+    user_full->noforwards_peer_enabled = noforwards_peer_enabled;
     user_full->is_changed = true;
   }
 }
@@ -8617,6 +8646,7 @@ void UserManager::on_get_user_full(telegram_api::object_ptr<telegram_api::userFu
       user_full, StarManager::get_star_count(user->settings_->charge_paid_message_stars_));
   on_update_user_full_send_paid_message_stars(user_full, StarManager::get_star_count(user->send_paid_messages_stars_));
   on_update_user_full_wallpaper_overridden(user_full, user->wallpaper_overridden_);
+  on_update_user_full_noforwards(user_full, user->noforwards_my_enabled_, user->noforwards_peer_enabled_);
   on_update_user_full_note(user_full,
                            get_formatted_text(this, std::move(user->note_), true, false, "on_get_user_full note"));
 
@@ -9108,6 +9138,8 @@ void UserManager::drop_user_full(UserId user_id) {
   user_full->has_private_calls = false;
   user_full->need_phone_number_privacy_exception = false;
   user_full->wallpaper_overridden = false;
+  user_full->noforwards_my_enabled = false;
+  user_full->noforwards_peer_enabled = false;
   user_full->about = string();
   user_full->bot_info = nullptr;
   user_full->gift_count = 0;
@@ -9985,7 +10017,8 @@ td_api::object_ptr<td_api::userFullInfo> UserManager::get_user_full_info_object(
       user_full->can_be_called, user_full->supports_video_calls, user_full->has_private_calls,
       !user_full->private_forward_name.empty(), voice_messages_forbidden, user_full->has_pinned_stories,
       user_full->sponsored_enabled, user_full->need_phone_number_privacy_exception, user_full->wallpaper_overridden,
-      std::move(bio_object), user_full->birthdate.get_birthdate_object(), personal_chat_id, user_full->gift_count,
+      user_full->noforwards_my_enabled, user_full->noforwards_peer_enabled, std::move(bio_object),
+      user_full->birthdate.get_birthdate_object(), personal_chat_id, user_full->gift_count,
       user_full->common_chat_count, user_full->charge_paid_message_stars, user_full->send_paid_message_stars,
       user_full->gift_settings.get_gift_settings_object(), std::move(bot_verification),
       get_profile_tab_object(user_full->main_profile_tab),
