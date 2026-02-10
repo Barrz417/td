@@ -786,23 +786,23 @@ class EditChatCreatorQuery final : public Td::ResultHandler {
   }
 };
 
-class GetFutureChannelCreatorAfterLeaveQuery final : public Td::ResultHandler {
+class GetFutureChatCreatorAfterLeaveQuery final : public Td::ResultHandler {
   Promise<td_api::object_ptr<td_api::user>> promise_;
-  ChannelId channel_id_;
+  DialogId dialog_id_;
 
  public:
-  explicit GetFutureChannelCreatorAfterLeaveQuery(Promise<td_api::object_ptr<td_api::user>> &&promise)
+  explicit GetFutureChatCreatorAfterLeaveQuery(Promise<td_api::object_ptr<td_api::user>> &&promise)
       : promise_(std::move(promise)) {
   }
 
-  void send(ChannelId channel_id) {
-    channel_id_ = channel_id;
-    auto input_peer = td_->dialog_manager_->get_input_peer(DialogId(channel_id), AccessRights::Read);
+  void send(DialogId dialog_id) {
+    dialog_id_ = dialog_id;
+    auto input_peer = td_->dialog_manager_->get_input_peer(dialog_id, AccessRights::Read);
     if (input_peer == nullptr) {
       return on_error(Status::Error(400, "Have no access to the chat"));
     }
     send_query(G()->net_query_creator().create(
-        telegram_api::messages_getFutureChatCreatorAfterLeave(std::move(input_peer)), {{channel_id}}));
+        telegram_api::messages_getFutureChatCreatorAfterLeave(std::move(input_peer)), {{dialog_id}}));
   }
 
   void on_result(BufferSlice packet) final {
@@ -812,14 +812,14 @@ class GetFutureChannelCreatorAfterLeaveQuery final : public Td::ResultHandler {
     }
 
     auto ptr = result_ptr.move_as_ok();
-    LOG(INFO) << "Receive result for GetFutureChannelCreatorAfterLeaveQuery: " << to_string(ptr);
+    LOG(INFO) << "Receive result for GetFutureChatCreatorAfterLeaveQuery: " << to_string(ptr);
     auto user_id = UserManager::get_user_id(ptr);
-    td_->user_manager_->on_get_user(std::move(ptr), "GetFutureChannelCreatorAfterLeaveQuery");
+    td_->user_manager_->on_get_user(std::move(ptr), "GetFutureChatCreatorAfterLeaveQuery");
     promise_.set_value(td_->user_manager_->get_user_object(user_id));
   }
 
   void on_error(Status status) final {
-    td_->chat_manager_->on_get_channel_error(channel_id_, status, "GetFutureChannelCreatorAfterLeaveQuery");
+    td_->dialog_manager_->on_get_dialog_error(dialog_id_, status, "GetFutureChatCreatorAfterLeaveQuery");
     promise_.set_error(std::move(status));
   }
 };
@@ -3102,12 +3102,11 @@ void DialogParticipantManager::get_future_creator_after_leave(DialogId dialog_id
                                                               Promise<td_api::object_ptr<td_api::user>> &&promise) {
   TRY_STATUS_PROMISE(promise, td_->dialog_manager_->check_dialog_access(dialog_id, false, AccessRights::Write,
                                                                         "get_future_creator_after_leave"));
-  if (dialog_id.get_type() != DialogType::Channel ||
-      !td_->chat_manager_->get_channel_status(dialog_id.get_channel_id()).is_creator()) {
+  if (!td_->dialog_manager_->get_dialog_status(dialog_id).is_creator()) {
     return promise.set_value(nullptr);
   }
 
-  td_->create_handler<GetFutureChannelCreatorAfterLeaveQuery>(std::move(promise))->send(dialog_id.get_channel_id());
+  td_->create_handler<GetFutureChatCreatorAfterLeaveQuery>(std::move(promise))->send(dialog_id);
 }
 
 void DialogParticipantManager::get_current_state(vector<td_api::object_ptr<td_api::Update>> &updates) const {
