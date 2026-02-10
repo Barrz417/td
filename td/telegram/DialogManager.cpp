@@ -2196,7 +2196,7 @@ string DialogManager::get_dialog_search_text(DialogId dialog_id) const {
 bool DialogManager::get_dialog_has_protected_content(DialogId dialog_id) const {
   switch (dialog_id.get_type()) {
     case DialogType::User:
-      return false;
+      return td_->user_manager_->get_user_has_protected_content(dialog_id.get_user_id());
     case DialogType::Chat:
       return td_->chat_manager_->get_chat_has_protected_content(dialog_id.get_chat_id());
     case DialogType::Channel:
