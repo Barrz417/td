@@ -1192,7 +1192,7 @@ class SendMessageQuery final : public Td::ResultHandler {
       return on_error(Status::Error(400, "Have no write access to the chat"));
     }
 
-    auto reply_to = input_reply_to.get_input_reply_to(td_, message_topic);
+    auto reply_to = input_reply_to.get_input_reply_to(td_, message_topic, dialog_id, flags);
 
     if (reply_to != nullptr) {
       flags |= telegram_api::messages_sendMessage::REPLY_TO_MASK;
