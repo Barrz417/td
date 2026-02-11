@@ -54,12 +54,16 @@ class MessageEntity {
     Spoiler,
     CustomEmoji,
     ExpandableBlockQuote,
+    FormattedDate,
     Size
   };
+  enum DateFlags : int32 { Relative = 1, ShortTime = 2, LongTime = 4, ShortDate = 8, LongDate = 16 };
   Type type = Type::Size;
   int32 offset = -1;
   int32 length = -1;
   int32 media_timestamp = -1;
+  int32 date = 0;
+  int32 date_flags = 0;
   string argument;
   UserId user_id;
   CustomEmojiId custom_emoji_id;
@@ -80,13 +84,16 @@ class MessageEntity {
       : type(type), offset(offset), length(length), custom_emoji_id(custom_emoji_id) {
     CHECK(type == Type::CustomEmoji);
   }
+  MessageEntity(int32 offset, int32 length, int32 date, int32 date_flags)
+      : type(Type::FormattedDate), offset(offset), length(length), date(date), date_flags(date_flags) {
+  }
 
   tl_object_ptr<td_api::textEntity> get_text_entity_object(const UserManager *user_manager) const;
 
   bool operator==(const MessageEntity &other) const {
     return offset == other.offset && length == other.length && type == other.type &&
-           media_timestamp == other.media_timestamp && argument == other.argument && user_id == other.user_id &&
-           custom_emoji_id == other.custom_emoji_id;
+           media_timestamp == other.media_timestamp && date == other.date && date_flags == other.date_flags &&
+           argument == other.argument && user_id == other.user_id && custom_emoji_id == other.custom_emoji_id;
   }
 
   bool operator<(const MessageEntity &other) const {

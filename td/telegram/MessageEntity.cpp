@@ -57,7 +57,8 @@ int MessageEntity::get_type_priority(Type type) {
                                    50 /*MediaTimestamp*/,
                                    94 /*Spoiler*/,
                                    99 /*CustomEmoji*/,
-                                   0 /*ExpandableBlockQuote*/};
+                                   0 /*ExpandableBlockQuote*/,
+                                   98 /*FormattedDate*/};
   static_assert(sizeof(priorities) / sizeof(priorities[0]) == static_cast<size_t>(MessageEntity::Type::Size), "");
   return priorities[static_cast<int32>(type)];
 }
@@ -108,6 +109,8 @@ StringBuilder &operator<<(StringBuilder &string_builder, const MessageEntity::Ty
       return string_builder << "CustomEmoji";
     case MessageEntity::Type::ExpandableBlockQuote:
       return string_builder << "ExpandableBlockQuote";
+    case MessageEntity::Type::FormattedDate:
+      return string_builder << "Date";
     default:
       UNREACHABLE();
       return string_builder << "Impossible";
@@ -128,6 +131,9 @@ StringBuilder &operator<<(StringBuilder &string_builder, const MessageEntity &me
   }
   if (message_entity.custom_emoji_id.is_valid()) {
     string_builder << ", " << message_entity.custom_emoji_id;
+  }
+  if (message_entity.date != 0) {
+    string_builder << ", at " << message_entity.date << " with flags " << message_entity.date_flags;
   }
   string_builder << ']';
   return string_builder;
@@ -182,6 +188,33 @@ tl_object_ptr<td_api::TextEntityType> MessageEntity::get_text_entity_type_object
       return make_tl_object<td_api::textEntityTypeCustomEmoji>(custom_emoji_id.get());
     case MessageEntity::Type::ExpandableBlockQuote:
       return make_tl_object<td_api::textEntityTypeExpandableBlockQuote>();
+    case MessageEntity::Type::FormattedDate: {
+      td_api::object_ptr<td_api::DateFormattingType> formatting_type;
+      if ((date_flags & DateFlags::Relative) != 0) {
+        formatting_type = td_api::make_object<td_api::dateFormattingTypeRelative>();
+      } else if (date_flags != 0) {
+        td_api::object_ptr<td_api::DatePartPrecision> time_precision;
+        if ((date_flags & DateFlags::ShortTime) != 0) {
+          time_precision = td_api::make_object<td_api::datePartPrecisionShort>();
+        } else if ((date_flags & DateFlags::LongTime) != 0) {
+          time_precision = td_api::make_object<td_api::datePartPrecisionLong>();
+        } else {
+          time_precision = td_api::make_object<td_api::datePartPrecisionNone>();
+        }
+
+        td_api::object_ptr<td_api::DatePartPrecision> day_precision;
+        if ((date_flags & DateFlags::ShortDate) != 0) {
+          day_precision = td_api::make_object<td_api::datePartPrecisionShort>();
+        } else if ((date_flags & DateFlags::LongDate) != 0) {
+          day_precision = td_api::make_object<td_api::datePartPrecisionLong>();
+        } else {
+          day_precision = td_api::make_object<td_api::datePartPrecisionNone>();
+        }
+        formatting_type = td_api::make_object<td_api::dateFormattingTypeAbsolute>(std::move(time_precision),
+                                                                                  std::move(day_precision));
+      }
+      return make_tl_object<td_api::textEntityTypeDate>(date, std::move(formatting_type));
+    }
     default:
       UNREACHABLE();
       return nullptr;
@@ -1444,6 +1477,8 @@ void remove_empty_entities(vector<MessageEntity> &entities) {
         return !entity.user_id.is_valid();
       case MessageEntity::Type::CustomEmoji:
         return !entity.custom_emoji_id.is_valid();
+      case MessageEntity::Type::FormattedDate:
+        return entity.date <= 0;
       default:
         return false;
     }
@@ -1497,7 +1532,8 @@ static constexpr int32 get_continuous_entities_mask() {
          get_entity_type_mask(MessageEntity::Type::PhoneNumber) |
          get_entity_type_mask(MessageEntity::Type::BankCardNumber) |
          get_entity_type_mask(MessageEntity::Type::MediaTimestamp) |
-         get_entity_type_mask(MessageEntity::Type::CustomEmoji);
+         get_entity_type_mask(MessageEntity::Type::CustomEmoji) |
+         get_entity_type_mask(MessageEntity::Type::FormattedDate);
 }
 
 static constexpr int32 get_pre_entities_mask() {
@@ -1508,7 +1544,8 @@ static constexpr int32 get_pre_entities_mask() {
 static constexpr int32 get_user_entities_mask() {
   return get_splittable_entities_mask() | get_blockquote_entities_mask() |
          get_entity_type_mask(MessageEntity::Type::TextUrl) | get_entity_type_mask(MessageEntity::Type::MentionName) |
-         get_entity_type_mask(MessageEntity::Type::CustomEmoji) | get_pre_entities_mask();
+         get_entity_type_mask(MessageEntity::Type::CustomEmoji) |
+         get_entity_type_mask(MessageEntity::Type::FormattedDate) | get_pre_entities_mask();
 }
 
 static int32 is_splittable_entity(MessageEntity::Type type) {
@@ -1863,6 +1900,8 @@ Slice get_first_url(const FormattedText &text) {
       case MessageEntity::Type::CustomEmoji:
         break;
       case MessageEntity::Type::ExpandableBlockQuote:
+        break;
+      case MessageEntity::Type::FormattedDate:
         break;
       default:
         UNREACHABLE();
@@ -3596,6 +3635,8 @@ vector<tl_object_ptr<secret_api::MessageEntity>> get_input_secret_message_entiti
           //     entity.length));
         }
         break;
+      case MessageEntity::Type::FormattedDate:
+        break;
       default:
         UNREACHABLE();
     }
@@ -3722,6 +3763,56 @@ Result<vector<MessageEntity>> get_message_entities(const UserManager *user_manag
       case td_api::textEntityTypeExpandableBlockQuote::ID:
         entities.emplace_back(MessageEntity::Type::ExpandableBlockQuote, offset, length);
         break;
+      case td_api::textEntityTypeDate::ID: {
+        auto entity = static_cast<const td_api::textEntityTypeDate *>(input_entity->type_.get());
+        if (entity->date_ <= 0) {
+          return Status::Error(400, "Invalid date specified");
+        }
+        int32 date_flags = 0;
+        if (entity->formatting_type_ != nullptr) {
+          switch (entity->formatting_type_->get_id()) {
+            case td_api::dateFormattingTypeRelative::ID:
+              date_flags = MessageEntity::DateFlags::Relative;
+              break;
+            case td_api::dateFormattingTypeAbsolute::ID: {
+              auto type = static_cast<const td_api::dateFormattingTypeAbsolute *>(entity->formatting_type_.get());
+              if (type->time_precision_ != nullptr) {
+                switch (type->time_precision_->get_id()) {
+                  case td_api::datePartPrecisionNone::ID:
+                    break;
+                  case td_api::datePartPrecisionShort::ID:
+                    date_flags |= MessageEntity::DateFlags::ShortTime;
+                    break;
+                  case td_api::datePartPrecisionLong::ID:
+                    date_flags |= MessageEntity::DateFlags::LongTime;
+                    break;
+                  default:
+                    UNREACHABLE();
+                }
+              }
+              if (type->day_precision_ != nullptr) {
+                switch (type->day_precision_->get_id()) {
+                  case td_api::datePartPrecisionNone::ID:
+                    break;
+                  case td_api::datePartPrecisionShort::ID:
+                    date_flags |= MessageEntity::DateFlags::ShortDate;
+                    break;
+                  case td_api::datePartPrecisionLong::ID:
+                    date_flags |= MessageEntity::DateFlags::LongDate;
+                    break;
+                  default:
+                    UNREACHABLE();
+                }
+              }
+              break;
+            }
+            default:
+              UNREACHABLE();
+          }
+        }
+        entities.emplace_back(offset, length, entity->date_, date_flags);
+        break;
+      }
       default:
         UNREACHABLE();
     }
@@ -3863,6 +3954,27 @@ vector<MessageEntity> get_message_entities(const UserManager *user_manager,
         break;
       }
       case telegram_api::messageEntityFormattedDate::ID: {
+        auto entity = static_cast<const telegram_api::messageEntityFormattedDate *>(server_entity.get());
+        if (entity->date_ <= 0) {
+          LOG(ERROR) << "Receive wrong date " << entity->date_;
+          continue;
+        }
+        int32 date_flags = 0;
+        if (entity->relative_) {
+          date_flags = MessageEntity::DateFlags::Relative;
+        } else {
+          if (entity->short_time_) {
+            date_flags |= MessageEntity::DateFlags::ShortTime;
+          } else if (entity->long_time_) {
+            date_flags |= MessageEntity::DateFlags::LongTime;
+          }
+          if (entity->short_date_) {
+            date_flags |= MessageEntity::DateFlags::ShortDate;
+          } else if (entity->long_date_) {
+            date_flags |= MessageEntity::DateFlags::LongDate;
+          }
+        }
+        entities.emplace_back(entity->offset_, entity->length_, entity->date_, date_flags);
         break;
       }
       default:
@@ -4710,6 +4822,14 @@ vector<tl_object_ptr<telegram_api::MessageEntity>> get_input_message_entities(co
       case MessageEntity::Type::ExpandableBlockQuote:
         result.push_back(make_tl_object<telegram_api::messageEntityBlockquote>(0, true, entity.offset, entity.length));
         break;
+      case MessageEntity::Type::FormattedDate:
+        result.push_back(make_tl_object<telegram_api::messageEntityFormattedDate>(
+            0, (entity.date_flags & MessageEntity::DateFlags::Relative) != 0,
+            (entity.date_flags & MessageEntity::DateFlags::ShortTime) != 0,
+            (entity.date_flags & MessageEntity::DateFlags::LongTime) != 0,
+            (entity.date_flags & MessageEntity::DateFlags::ShortDate) != 0,
+            (entity.date_flags & MessageEntity::DateFlags::LongDate) != 0, entity.offset, entity.length, entity.date));
+        break;
       default:
         UNREACHABLE();
     }
@@ -4782,6 +4902,9 @@ void remove_unallowed_entities(const Td *td, FormattedText &text, DialogId dialo
       }
       if (layer < static_cast<int32>(SecretChatLayer::SpoilerAndCustomEmojiEntities) &&
           (entity.type == MessageEntity::Type::Spoiler || entity.type == MessageEntity::Type::CustomEmoji)) {
+        return true;
+      }
+      if (entity.type == MessageEntity::Type::FormattedDate) {
         return true;
       }
       return false;

@@ -5138,6 +5138,29 @@ messageProximityAlertTriggered traveler_id:MessageSender watcher_id:MessageSende
 messageUnsupported = MessageContent;
 
 
+//@class DatePartPrecision @description Describes precision with which to show a date part
+
+//@description Don't show the date part
+datePartPrecisionNone = DatePartPrecision;
+
+//@description Show the date part in a short way (22:45 or 17.03.22)
+datePartPrecisionShort = DatePartPrecision;
+
+//@description Show the date part in a long way (22:45:00 or March 17, 2022)
+datePartPrecisionLong = DatePartPrecision;
+
+
+//@class DateFormattingType @description Describes date formatting
+
+//@description The date must be shown relative to the current time ([in ] X seconds, minutes, hours, days, months, years [ago])
+dateFormattingTypeRelative = DateFormattingType;
+
+//@description The date must be shown as absolute time
+//@time_precision The precision with which hours, minutes and seconds are shown
+//@day_precision The precision with which the day is shown
+dateFormattingTypeAbsolute time_precision:DatePartPrecision day_precision:DatePartPrecision = DateFormattingType;
+
+
 //@class TextEntityType @description Represents a part of the text which must be formatted differently
 
 //@description A mention of a user, a supergroup, or a channel by their username
@@ -5205,6 +5228,9 @@ textEntityTypeCustomEmoji custom_emoji_id:int64 = TextEntityType;
 
 //@description A media timestamp @media_timestamp Timestamp from which a video/audio/video note/voice note/story playing must start, in seconds. The media can be in the content or the link preview of the current message, or in the same places in the replied message
 textEntityTypeMediaTimestamp media_timestamp:int32 = TextEntityType;
+
+//@description A date @date Point in time (Unix timestamp) to which the date points @formatting_type Date formatting type; may be null if none and the original text must not be changed
+textEntityTypeDate date:int32 formatting_type:DateFormattingType = TextEntityType;
 
 
 //@description A thumbnail to be sent along with a file; must be in JPEG or WEBP format for stickers, and less than 200 KB in size
