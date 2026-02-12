@@ -3469,7 +3469,8 @@ loginUrlInfoOpen url:string skip_confirmation:Bool = LoginUrlInfo;
 //@platform Operating system the browser is running on; may be empty if irrelevant
 //@ip_address IP address from which the authorization is performed, in human-readable format; may be empty if irrelevant
 //@location Human-readable description of a country and a region from which the authorization is performed, based on the IP address; may be empty if irrelevant
-loginUrlInfoRequestConfirmation url:string domain:string bot_user_id:int53 request_write_access:Bool request_phone_number_access:Bool browser:string platform:string ip_address:string location:string = LoginUrlInfo;
+//@match_codes The list of codes to match; may be empty if irrelevant
+loginUrlInfoRequestConfirmation url:string domain:string bot_user_id:int53 request_write_access:Bool request_phone_number_access:Bool browser:string platform:string ip_address:string location:string match_codes:vector<string> = LoginUrlInfo;
 
 
 //@description Contains parameters of the application theme
@@ -5158,7 +5159,8 @@ dateFormattingTypeRelative = DateFormattingType;
 //@description The date must be shown as absolute time
 //@time_precision The precision with which hours, minutes and seconds are shown
 //@day_precision The precision with which the day is shown
-dateFormattingTypeAbsolute time_precision:DatePartPrecision day_precision:DatePartPrecision = DateFormattingType;
+//@show_day_of_week True, if the day of week should be shown
+dateFormattingTypeAbsolute time_precision:DatePartPrecision day_precision:DatePartPrecision show_day_of_week:Bool = DateFormattingType;
 
 
 //@class TextEntityType @description Represents a part of the text which must be formatted differently

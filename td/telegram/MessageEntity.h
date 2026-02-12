@@ -57,7 +57,7 @@ class MessageEntity {
     FormattedDate,
     Size
   };
-  enum DateFlags : int32 { Relative = 1, ShortTime = 2, LongTime = 4, ShortDate = 8, LongDate = 16 };
+  enum DateFlags : int32 { Relative = 1, ShortTime = 2, LongTime = 4, ShortDate = 8, LongDate = 16, DayOfWeek = 32 };
   Type type = Type::Size;
   int32 offset = -1;
   int32 length = -1;

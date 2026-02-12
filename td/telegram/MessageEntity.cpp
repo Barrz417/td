@@ -210,8 +210,9 @@ tl_object_ptr<td_api::TextEntityType> MessageEntity::get_text_entity_type_object
         } else {
           day_precision = td_api::make_object<td_api::datePartPrecisionNone>();
         }
-        formatting_type = td_api::make_object<td_api::dateFormattingTypeAbsolute>(std::move(time_precision),
-                                                                                  std::move(day_precision));
+        auto show_day_of_week = (date_flags & DateFlags::DayOfWeek) != 0;
+        formatting_type = td_api::make_object<td_api::dateFormattingTypeAbsolute>(
+            std::move(time_precision), std::move(day_precision), show_day_of_week);
       }
       return make_tl_object<td_api::textEntityTypeDate>(date, std::move(formatting_type));
     }
@@ -3804,6 +3805,9 @@ Result<vector<MessageEntity>> get_message_entities(const UserManager *user_manag
                     UNREACHABLE();
                 }
               }
+              if (type->show_day_of_week_) {
+                date_flags |= MessageEntity::DateFlags::DayOfWeek;
+              }
               break;
             }
             default:
@@ -3972,6 +3976,9 @@ vector<MessageEntity> get_message_entities(const UserManager *user_manager,
             date_flags |= MessageEntity::DateFlags::ShortDate;
           } else if (entity->long_date_) {
             date_flags |= MessageEntity::DateFlags::LongDate;
+          }
+          if (entity->day_of_week_) {
+            date_flags |= MessageEntity::DateFlags::DayOfWeek;
           }
         }
         entities.emplace_back(entity->offset_, entity->length_, entity->date_, date_flags);
@@ -4828,7 +4835,8 @@ vector<tl_object_ptr<telegram_api::MessageEntity>> get_input_message_entities(co
             (entity.date_flags & MessageEntity::DateFlags::ShortTime) != 0,
             (entity.date_flags & MessageEntity::DateFlags::LongTime) != 0,
             (entity.date_flags & MessageEntity::DateFlags::ShortDate) != 0,
-            (entity.date_flags & MessageEntity::DateFlags::LongDate) != 0, entity.offset, entity.length, entity.date));
+            (entity.date_flags & MessageEntity::DateFlags::LongDate) != 0,
+            (entity.date_flags & MessageEntity::DateFlags::DayOfWeek) != 0, entity.offset, entity.length, entity.date));
         break;
       default:
         UNREACHABLE();
