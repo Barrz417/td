@@ -5448,10 +5448,18 @@ td_api::object_ptr<td_api::emojiStatus> UserManager::get_secret_chat_emoji_statu
   return get_user_emoji_status_object(c->user_id);
 }
 
-bool UserManager::get_user_has_protected_content(UserId user_id, bool only_my) {
-  auto user_full = get_user_full_force(user_id, "get_user_has_protected_content");
+bool UserManager::get_user_has_protected_content_force(UserId user_id, bool only_my) {
+  auto user_full = get_user_full_force(user_id, "get_user_has_protected_content_force");
   if (user_full != nullptr) {
     return user_full->noforwards_my_enabled || (!only_my && user_full->noforwards_peer_enabled);
+  }
+  return false;
+}
+
+bool UserManager::get_user_has_protected_content(UserId user_id) const {
+  auto user_full = get_user_full(user_id);
+  if (user_full != nullptr) {
+    return user_full->noforwards_my_enabled || user_full->noforwards_peer_enabled;
   }
   return false;
 }

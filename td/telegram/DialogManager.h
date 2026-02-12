@@ -185,7 +185,9 @@ class DialogManager final : public Actor {
 
   string get_dialog_search_text(DialogId dialog_id) const;
 
-  bool get_dialog_has_protected_content(DialogId dialog_id, bool only_my = false) const;
+  bool get_dialog_has_protected_content_force(DialogId dialog_id, bool only_my = false);
+
+  bool get_dialog_has_protected_content(DialogId dialog_id) const;
 
   bool is_dialog_action_unneeded(DialogId dialog_id) const;
 

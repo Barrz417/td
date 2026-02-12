@@ -7752,7 +7752,7 @@ string MessagesManager::get_message_search_text(const Message *m) const {
 }
 
 bool MessagesManager::get_message_has_protected_content(DialogId dialog_id, const Message *m) const {
-  return m->noforwards || td_->dialog_manager_->get_dialog_has_protected_content(dialog_id);
+  return m->noforwards || td_->dialog_manager_->get_dialog_has_protected_content_force(dialog_id);
 }
 
 bool MessagesManager::can_add_message_offer(DialogId dialog_id, const Message *m) const {
@@ -23825,7 +23825,7 @@ Result<MessagesManager::ForwardedMessages> MessagesManager::get_forwarded_messag
   if (!td_->dialog_manager_->have_input_peer(from_dialog_id, false, AccessRights::Read)) {
     return Status::Error(400, "Can't access the chat to forward messages from");
   }
-  if (td_->dialog_manager_->get_dialog_has_protected_content(from_dialog_id)) {
+  if (td_->dialog_manager_->get_dialog_has_protected_content_force(from_dialog_id)) {
     for (const auto &copy_option : copy_options) {
       if (!copy_option.send_copy || !td_->auth_manager_->is_bot()) {
         return Status::Error(400, "Message has protected content and can't be forwarded");
