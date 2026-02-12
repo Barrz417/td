@@ -12021,9 +12021,10 @@ getExternalLinkInfo link:string = LoginUrlInfo;
 //@description Returns an HTTP URL which can be used to automatically authorize the current user on a website after clicking an HTTP link.
 //-Use the method getExternalLinkInfo to find whether a prior user confirmation is needed. May return an empty link if just a toast about successful login has to be shown
 //@link The HTTP link
+//@match_code The matching code chosen by the user; pass an empty string if irrelevant
 //@allow_write_access Pass true if the current user allowed the bot that was returned in getExternalLinkInfo, to send them messages
 //@allow_phone_number_access Pass true if the current user allowed the bot that was returned in getExternalLinkInfo, to access their phone number
-getExternalLink link:string allow_write_access:Bool allow_phone_number_access:Bool = HttpUrl;
+getExternalLink link:string match_code:string allow_write_access:Bool allow_phone_number_access:Bool = HttpUrl;
 
 
 //@description Marks all mentions in a chat as read @chat_id Chat identifier
