@@ -6140,10 +6140,12 @@ void UserManager::delete_profile_photo(int64 profile_photo_id, bool is_recursive
           }
           send_closure(actor_id, &UserManager::delete_profile_photo, profile_photo_id, true, std::move(promise));
         });
-    reload_user_full(get_my_id(), std::move(reload_promise), "delete_profile_photo");
-    return;
+    return reload_user_full(get_my_id(), std::move(reload_promise), "delete_profile_photo");
   }
   if (td_->auth_manager_->is_bot()) {
+    if (user_full->photo.is_empty()) {
+      return promise.set_value(Unit());
+    }
     profile_photo_id = user_full->photo.id.get();
   }
   if (user_full->photo.id.get() == profile_photo_id || user_full->fallback_photo.id.get() == profile_photo_id) {
