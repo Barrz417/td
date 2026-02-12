@@ -407,6 +407,7 @@ static AdministratorRights get_administrator_rights(Slice rights, bool for_chann
   bool can_edit_stories = false;
   bool can_delete_stories = false;
   bool can_manage_direct_messages = false;
+  bool can_manage_ranks = false;
   bool is_anonymous = false;
   for (auto right : full_split(rights, ' ')) {
     if (right == "change_info") {
@@ -437,6 +438,8 @@ static AdministratorRights get_administrator_rights(Slice rights, bool for_chann
       can_delete_stories = true;
     } else if (right == "manage_direct_messages") {
       can_manage_direct_messages = true;
+    } else if (right == "manage_ranks") {
+      can_manage_ranks = true;
     } else if (right == "anonymous") {
       is_anonymous = true;
     } else if (right == "manage_chat") {
@@ -446,7 +449,7 @@ static AdministratorRights get_administrator_rights(Slice rights, bool for_chann
   return AdministratorRights(is_anonymous, can_manage_dialog, can_change_info, can_post_messages, can_edit_messages,
                              can_delete_messages, can_invite_users, can_restrict_members, can_pin_messages,
                              can_manage_topics, can_promote_members, can_manage_calls, can_post_stories,
-                             can_edit_stories, can_delete_stories, can_manage_direct_messages,
+                             can_edit_stories, can_delete_stories, can_manage_direct_messages, can_manage_ranks,
                              for_channel ? ChannelType::Broadcast : ChannelType::Megagroup);
 }
 
@@ -493,6 +496,9 @@ static string get_admin_string(AdministratorRights rights) {
   }
   if (rights.can_manage_direct_messages()) {
     admin_rights.emplace_back("manage_direct_messages");
+  }
+  if (rights.can_manage_ranks()) {
+    admin_rights.emplace_back("manage_ranks");
   }
   if (rights.is_anonymous()) {
     admin_rights.emplace_back("anonymous");
