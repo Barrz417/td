@@ -1641,6 +1641,8 @@ class RequestUrlAuthQuery final : public Td::ResultHandler {
       case telegram_api::urlAuthResultDefault::ID:
         promise_.set_value(td_api::make_object<td_api::loginUrlInfoOpen>(url_, false));
         break;
+      default:
+        UNREACHABLE();
     }
   }
 
