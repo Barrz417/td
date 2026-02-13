@@ -1917,7 +1917,7 @@ void ChatManager::Chat::parse(ParserT &parser) {
     }
     default_permissions = RestrictedRights(true, true, true, true, true, true, true, true, true, true, true, true, true,
                                            everyone_is_administrator, everyone_is_administrator,
-                                           everyone_is_administrator, false, ChannelType::Unknown);
+                                           everyone_is_administrator, false, false, ChannelType::Unknown);
   }
   if (has_default_permissions_version) {
     parse(default_permissions_version, parser);
@@ -2287,8 +2287,9 @@ void ChatManager::Channel::parse(ParserT &parser) {
     if (have_default_permissions) {
       parse(default_permissions, parser);
     } else {
-      default_permissions = RestrictedRights(true, true, true, true, true, true, true, true, true, true, true, true,
-                                             true, false, anyone_can_invite, false, false, ChannelType::Megagroup);
+      default_permissions =
+          RestrictedRights(true, true, true, true, true, true, true, true, true, true, true, true, true, false,
+                           anyone_can_invite, false, false, false, ChannelType::Megagroup);
     }
   }
   if (has_cache_version) {
@@ -2995,7 +2996,7 @@ RestrictedRights ChatManager::get_chat_default_permissions(ChatId chat_id) const
   auto c = get_chat(chat_id);
   if (c == nullptr) {
     return RestrictedRights(false, false, false, false, false, false, false, false, false, false, false, false, false,
-                            false, false, false, false, ChannelType::Unknown);
+                            false, false, false, false, false, ChannelType::Unknown);
   }
   return c->default_permissions;
 }
@@ -3004,7 +3005,7 @@ RestrictedRights ChatManager::get_channel_default_permissions(ChannelId channel_
   auto c = get_channel(channel_id);
   if (c == nullptr) {
     return RestrictedRights(false, false, false, false, false, false, false, false, false, false, false, false, false,
-                            false, false, false, false, ChannelType::Unknown);
+                            false, false, false, false, false, ChannelType::Unknown);
   }
   return c->default_permissions;
 }
@@ -3876,7 +3877,7 @@ bool ChatManager::can_convert_channel_to_gigagroup(ChannelId channel_id) const {
   return c == nullptr || get_channel_type(c) != ChannelType::Megagroup || !get_channel_status(c).is_creator() ||
          c->is_gigagroup ||
          c->default_permissions != RestrictedRights(false, false, false, false, false, false, false, false, false,
-                                                    false, false, false, false, false, false, false, false,
+                                                    false, false, false, false, false, false, false, false, false,
                                                     ChannelType::Unknown);
 }
 
@@ -5400,7 +5401,7 @@ void ChatManager::update_channel(Channel *c, ChannelId channel_id, bool from_bin
   if (c->is_default_permissions_changed) {
     td_->messages_manager_->on_dialog_default_permissions_updated(DialogId(channel_id));
     if (c->default_permissions != RestrictedRights(false, false, false, false, false, false, false, false, false, false,
-                                                   false, false, false, false, false, false, false,
+                                                   false, false, false, false, false, false, false, false,
                                                    ChannelType::Unknown)) {
       td_->suggested_action_manager_->remove_dialog_suggested_action(
           SuggestedAction{SuggestedAction::Type::ConvertToGigagroup, DialogId(channel_id)});
