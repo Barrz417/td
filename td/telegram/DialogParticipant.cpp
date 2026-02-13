@@ -46,7 +46,7 @@ AdministratorRights::AdministratorRights(const td_api::object_ptr<td_api::chatAd
                               rights->can_invite_users_, rights->can_restrict_members_, rights->can_pin_messages_,
                               rights->can_manage_topics_, rights->can_promote_members_, rights->can_manage_video_chats_,
                               rights->can_post_stories_, rights->can_edit_stories_, rights->can_delete_stories_,
-                              rights->can_manage_direct_messages_, rights->can_manage_ranks_, channel_type);
+                              rights->can_manage_direct_messages_, rights->can_manage_custom_tags_, channel_type);
 }
 
 AdministratorRights::AdministratorRights(bool is_anonymous, bool can_manage_dialog, bool can_change_info,
@@ -205,7 +205,7 @@ RestrictedRights::RestrictedRights(const td_api::object_ptr<td_api::chatPermissi
                            rights->can_send_other_messages_, rights->can_send_other_messages_,
                            rights->can_send_other_messages_, rights->can_add_link_previews_, rights->can_send_polls_,
                            rights->can_change_info_, rights->can_invite_users_, rights->can_pin_messages_,
-                           rights->can_create_topics_, rights->can_edit_rank_, channel_type);
+                           rights->can_create_topics_, rights->can_edit_custom_tag_, channel_type);
 }
 
 RestrictedRights::RestrictedRights(bool can_send_messages, bool can_send_audios, bool can_send_documents,
