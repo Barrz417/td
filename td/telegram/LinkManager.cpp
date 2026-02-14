@@ -3973,11 +3973,10 @@ void LinkManager::get_login_url(MessageFullId message_full_id, int64 button_id, 
       ->send(std::move(url), message_full_id, narrow_cast<int32>(button_id), allow_write_access, false, string());
 }
 
-void LinkManager::get_link_login_url(const string &url, const string &match_code, bool allow_write_access,
-                                     bool allow_phone_number_access,
+void LinkManager::get_link_login_url(const string &url, bool allow_write_access,
                                      Promise<td_api::object_ptr<td_api::httpUrl>> &&promise) {
   td_->create_handler<AcceptUrlAuthQuery>(std::move(promise))
-      ->send(url, MessageFullId(), 0, allow_write_access, allow_phone_number_access, match_code);
+      ->send(url, MessageFullId(), 0, allow_write_access, false, string());
 }
 
 void LinkManager::accept_oauth_request(const string &url, const string &match_code, bool allow_write_access,
