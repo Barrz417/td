@@ -957,6 +957,18 @@ class LinkManager::InternalLinkNewPrivateChat final : public InternalLink {
   }
 };
 
+class LinkManager::InternalLinkOauth final : public InternalLink {
+  string url_;
+
+  td_api::object_ptr<td_api::InternalLinkType> get_internal_link_type_object() const final {
+    return td_api::make_object<td_api::internalLinkTypeOauth>(url_);
+  }
+
+ public:
+  explicit InternalLinkOauth(string url) : url_(std::move(url)) {
+  }
+};
+
 class LinkManager::InternalLinkPassportDataRequest final : public InternalLink {
   UserId bot_user_id_;
   string scope_;
@@ -2008,7 +2020,8 @@ unique_ptr<LinkManager::InternalLink> LinkManager::parse_tg_link_query(Slice que
                       << copy_arg("thread") << copy_arg("comment") << copy_arg("t"));
       }
       if (username == "oauth" && has_arg("startapp")) {
-        return nullptr;
+        return td::make_unique<InternalLinkOauth>(PSTRING()
+                                                  << "tg://resolve" << copy_arg("domain") << copy_arg("startapp"));
       }
       for (auto &arg : url_query.args_) {
         if ((arg.first == "voicechat" || arg.first == "videochat" || arg.first == "livestream") &&
@@ -2177,7 +2190,7 @@ unique_ptr<LinkManager::InternalLink> LinkManager::parse_tg_link_query(Slice que
     return td::make_unique<InternalLinkNewGroupChat>();
   } else if (path.size() == 1 && path[0] == "oauth" && has_arg("token")) {
     // oauth?token=...
-    return nullptr;
+    return td::make_unique<InternalLinkOauth>(PSTRING() << "tg://oauth" << copy_arg("token"));
   } else if (path.size() <= 2 && path[0] == "post") {
     // post[/content-type]
     return td::make_unique<InternalLinkPostStory>(path.size() == 2 ? path[1] : string());
@@ -3302,6 +3315,21 @@ Result<string> LinkManager::get_internal_link_impl(const td_api::InternalLinkTyp
         }
       }
       return "tg://post";
+    }
+    case td_api::internalLinkTypeOauth::ID: {
+      auto link = static_cast<const td_api::internalLinkTypeOauth *>(type_ptr);
+      if (!is_internal) {
+        return Status::Error("HTTP link is unavailable for the link type");
+      }
+      auto parsed_link = parse_internal_link(link->url_);
+      if (parsed_link == nullptr) {
+        return Status::Error(400, "Invalid message URL specified");
+      }
+      auto parsed_object = parsed_link->get_internal_link_type_object();
+      if (parsed_object->get_id() != td_api::internalLinkTypeOauth::ID) {
+        return Status::Error(400, "Invalid OAuth URL specified");
+      }
+      return std::move(static_cast<td_api::internalLinkTypeOauth &>(*parsed_object).url_);
     }
     case td_api::internalLinkTypePassportDataRequest::ID: {
       auto link = static_cast<const td_api::internalLinkTypePassportDataRequest *>(type_ptr);

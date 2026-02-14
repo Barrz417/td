@@ -422,6 +422,10 @@ static auto new_story(td::td_api::object_ptr<td::td_api::StoryContentType> conte
   return td::td_api::make_object<td::td_api::internalLinkTypeNewStory>(std::move(content_type));
 }
 
+static auto oauth(const td::string &url) {
+  return td::td_api::make_object<td::td_api::internalLinkTypeOauth>(url);
+}
+
 static auto passport_data_request(td::int32 bot_user_id, const td::string &scope, const td::string &public_key,
                                   const td::string &nonce, const td::string &callback_url) {
   return td::td_api::make_object<td::td_api::internalLinkTypePassportDataRequest>(bot_user_id, scope, public_key, nonce,
@@ -668,10 +672,13 @@ TEST(Link, parse_internal_link_part1) {
   parse_internal_link("tg:resolve?phone=123456&attach=test%30&startattach=*",
                       attachment_menu_bot(nullptr, user_phone_number("123456"), "test0", ""));
 
-  parse_internal_link("tg:resolve?domain=oauth&startapp=12345", nullptr);
+  parse_internal_link("tg:resolve?domain=oauth&startapp=12345", oauth("tg://resolve?domain=oauth&startapp=12345"));
+  parse_internal_link("tg:resolve?domain=oauth&startapp=%312345&token=asd",
+                      oauth("tg://resolve?domain=oauth&startapp=12345"));
   parse_internal_link("tg:resolve?domain=oauth&startapp=", main_web_app("oauth", "", false, false));
   parse_internal_link("tg:resolve?domain=oauth", public_chat("oauth"));
-  parse_internal_link("tg:oauth?token=12345", nullptr);
+  parse_internal_link("tg:oauth?token=12345", oauth("tg://oauth?token=12345"));
+  parse_internal_link("tg:oauth?token=%312345&startapp=1231", oauth("tg://oauth?token=12345"));
   parse_internal_link("tg:oauth?token=", unknown_deep_link("tg://oauth?token="));
 
   parse_internal_link("tg:contact?token=1", user_token("1"));
