@@ -3456,7 +3456,7 @@ replyMarkupShowKeyboard rows:vector<vector<keyboardButton>> is_persistent:Bool r
 replyMarkupInlineKeyboard rows:vector<vector<inlineKeyboardButton>> = ReplyMarkup;
 
 
-//@class LoginUrlInfo @description Contains information about an inline button of type inlineKeyboardButtonTypeLoginUrl
+//@class LoginUrlInfo @description Contains information about an inline button of type inlineKeyboardButtonTypeLoginUrl or an external link
 
 //@description An HTTP URL needs to be open @url The URL to open @skip_confirmation True, if there is no need to show an ordinary open URL confirmation
 loginUrlInfoOpen url:string skip_confirmation:Bool = LoginUrlInfo;
@@ -3473,6 +3473,20 @@ loginUrlInfoOpen url:string skip_confirmation:Bool = LoginUrlInfo;
 //@location Human-readable description of a country and a region from which the authorization is performed, based on the IP address; may be empty if irrelevant
 //@match_codes The list of codes to match; may be empty if irrelevant
 loginUrlInfoRequestConfirmation url:string domain:string bot_user_id:int53 request_write_access:Bool request_phone_number_access:Bool browser:string platform:string ip_address:string location:string match_codes:vector<string> = LoginUrlInfo;
+
+
+//@description Information about the OAuth authorization
+//@url An HTTP URL where the users authorizes
+//@domain A domain of the URL
+//@bot_user_id User identifier of a bot linked with the website
+//@request_write_access True, if the user must be asked for the permission to the bot to send them messages
+//@request_phone_number_access True, if the user must be asked for the permission to share their phone number
+//@browser The version of a browser used for the authorization
+//@platform Operating system the browser is running on
+//@ip_address IP address from which the authorization is performed, in human-readable format
+//@location Human-readable description of a country and a region from which the authorization is performed, based on the IP address
+//@match_codes The list of codes to match; may be empty if irrelevant
+oauthLinkInfo url:string domain:string bot_user_id:int53 request_write_access:Bool request_phone_number_access:Bool browser:string platform:string ip_address:string location:string match_codes:vector<string> = OauthLinkInfo;
 
 
 //@description Contains parameters of the application theme
@@ -12032,6 +12046,10 @@ getExternalLinkInfo link:string = LoginUrlInfo;
 //@allow_write_access Pass true if the current user allowed the bot that was returned in getExternalLinkInfo, to send them messages
 //@allow_phone_number_access Pass true if the current user allowed the bot that was returned in getExternalLinkInfo, to access their phone number
 getExternalLink link:string match_code:string allow_write_access:Bool allow_phone_number_access:Bool = HttpUrl;
+
+//@description Returns information about an OAuth deep link. Use acceptOauthRequest or declineOauthRequest to process the link
+//@url URL of the link
+getOauthLinkInfo url:string = OauthLinkInfo;
 
 
 //@description Marks all mentions in a chat as read @chat_id Chat identifier

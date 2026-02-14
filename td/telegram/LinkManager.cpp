@@ -1670,6 +1670,58 @@ class RequestUrlAuthQuery final : public Td::ResultHandler {
   }
 };
 
+class RequestUrlOauthQuery final : public Td::ResultHandler {
+  Promise<td_api::object_ptr<td_api::oauthLinkInfo>> promise_;
+  string url_;
+
+ public:
+  explicit RequestUrlOauthQuery(Promise<td_api::object_ptr<td_api::oauthLinkInfo>> &&promise)
+      : promise_(std::move(promise)) {
+  }
+
+  void send(string url) {
+    url_ = std::move(url);
+    int32 flags = telegram_api::messages_requestUrlAuth::URL_MASK;
+    send_query(
+        G()->net_query_creator().create(telegram_api::messages_requestUrlAuth(flags, nullptr, 0, 0, url_, string())));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::messages_requestUrlAuth>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    auto result = result_ptr.move_as_ok();
+    LOG(INFO) << "Receive result for RequestUrlOauthQuery: " << to_string(result);
+    switch (result->get_id()) {
+      case telegram_api::urlAuthResultRequest::ID: {
+        auto request = telegram_api::move_object_as<telegram_api::urlAuthResultRequest>(result);
+        UserId bot_user_id = UserManager::get_user_id(request->bot_);
+        if (!bot_user_id.is_valid()) {
+          return on_error(Status::Error(500, "Receive invalid bot_user_id"));
+        }
+        td_->user_manager_->on_get_user(std::move(request->bot_), "RequestUrlAuthQuery");
+        promise_.set_value(td_api::make_object<td_api::oauthLinkInfo>(
+            url_, request->domain_, td_->user_manager_->get_user_id_object(bot_user_id, "oauthLinkInfo"),
+            request->request_write_access_, request->request_phone_number_, request->browser_, request->platform_,
+            request->ip_, request->region_, std::move(request->match_codes_)));
+        break;
+      }
+      case telegram_api::urlAuthResultAccepted::ID:
+      case telegram_api::urlAuthResultDefault::ID:
+        return on_error(Status::Error(400, "URL_EXPIRED"));
+      default:
+        UNREACHABLE();
+    }
+  }
+
+  void on_error(Status status) final {
+    LOG(INFO) << "Receive error for RequestUrlOauthQuery: " << status;
+    promise_.set_error(std::move(status));
+  }
+};
+
 class AcceptUrlAuthQuery final : public Td::ResultHandler {
   Promise<td_api::object_ptr<td_api::httpUrl>> promise_;
   string url_;
@@ -3323,7 +3375,7 @@ Result<string> LinkManager::get_internal_link_impl(const td_api::InternalLinkTyp
       }
       auto parsed_link = parse_internal_link(link->url_);
       if (parsed_link == nullptr) {
-        return Status::Error(400, "Invalid message URL specified");
+        return Status::Error(400, "Invalid OAuth URL specified");
       }
       auto parsed_object = parsed_link->get_internal_link_type_object();
       if (parsed_object->get_id() != td_api::internalLinkTypeOauth::ID) {
@@ -3934,6 +3986,19 @@ void LinkManager::get_link_login_url(const string &url, const string &match_code
                                      Promise<td_api::object_ptr<td_api::httpUrl>> &&promise) {
   td_->create_handler<AcceptUrlAuthQuery>(std::move(promise))
       ->send(url, MessageFullId(), 0, allow_write_access, allow_phone_number_access, match_code);
+}
+
+void LinkManager::get_oauth_link_info(string &&link, Promise<td_api::object_ptr<td_api::oauthLinkInfo>> &&promise) {
+  auto parsed_link = parse_internal_link(link);
+  if (parsed_link == nullptr) {
+    return promise.set_error(400, "Invalid OAuth URL specified");
+  }
+  auto parsed_object = parsed_link->get_internal_link_type_object();
+  if (parsed_object->get_id() != td_api::internalLinkTypeOauth::ID) {
+    return promise.set_error(400, "Invalid OAuth URL specified");
+  }
+  link = std::move(static_cast<td_api::internalLinkTypeOauth &>(*parsed_object).url_);
+  td_->create_handler<RequestUrlOauthQuery>(std::move(promise))->send(link);
 }
 
 Result<string> LinkManager::get_background_url(const string &name,

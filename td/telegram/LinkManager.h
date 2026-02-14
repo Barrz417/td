@@ -83,6 +83,8 @@ class LinkManager final : public Actor {
   void get_link_login_url(const string &url, const string &match_code, bool allow_write_access,
                           bool allow_phone_number_access, Promise<td_api::object_ptr<td_api::httpUrl>> &&promise);
 
+  void get_oauth_link_info(string &&link, Promise<td_api::object_ptr<td_api::oauthLinkInfo>> &&promise);
+
   static Result<string> get_background_url(const string &name,
                                            td_api::object_ptr<td_api::BackgroundType> background_type);
 
