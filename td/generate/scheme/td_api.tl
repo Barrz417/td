@@ -3466,13 +3466,7 @@ loginUrlInfoOpen url:string skip_confirmation:Bool = LoginUrlInfo;
 //@domain A domain of the URL
 //@bot_user_id User identifier of a bot linked with the website
 //@request_write_access True, if the user must be asked for the permission to the bot to send them messages
-//@request_phone_number_access True, if the user must be asked for the permission to share their phone number
-//@browser The version of a browser used for the authorization; may be empty if irrelevant
-//@platform Operating system the browser is running on; may be empty if irrelevant
-//@ip_address IP address from which the authorization is performed, in human-readable format; may be empty if irrelevant
-//@location Human-readable description of a country and a region from which the authorization is performed, based on the IP address; may be empty if irrelevant
-//@match_codes The list of codes to match; may be empty if irrelevant
-loginUrlInfoRequestConfirmation url:string domain:string bot_user_id:int53 request_write_access:Bool request_phone_number_access:Bool browser:string platform:string ip_address:string location:string match_codes:vector<string> = LoginUrlInfo;
+loginUrlInfoRequestConfirmation url:string domain:string bot_user_id:int53 request_write_access:Bool = LoginUrlInfo;
 
 
 //@description Information about the OAuth authorization

@@ -1639,10 +1639,13 @@ class RequestUrlAuthQuery final : public Td::ResultHandler {
           return on_error(Status::Error(500, "Receive invalid bot_user_id"));
         }
         td_->user_manager_->on_get_user(std::move(request->bot_), "RequestUrlAuthQuery");
+        if (request->request_phone_number_ || !request->browser_.empty() || !request->platform_.empty() ||
+            !request->ip_.empty() || !request->region_.empty() || !request->match_codes_.empty()) {
+          LOG(ERROR) << "Receive invalid login URL details: " << to_string(request);
+        }
         promise_.set_value(td_api::make_object<td_api::loginUrlInfoRequestConfirmation>(
             url_, request->domain_, td_->user_manager_->get_user_id_object(bot_user_id, "RequestUrlAuthQuery"),
-            request->request_write_access_, request->request_phone_number_, request->browser_, request->platform_,
-            request->ip_, request->region_, std::move(request->match_codes_)));
+            request->request_write_access_));
         break;
       }
       case telegram_api::urlAuthResultAccepted::ID: {
@@ -3879,17 +3882,6 @@ void LinkManager::get_external_link_info(string &&link, Promise<td_api::object_p
 
   auto r_url = parse_url(link);
   if (r_url.is_error()) {
-    auto info = get_link_info(link);
-    if (info.type_ == LinkType::Tg) {
-      const auto url_query = parse_url_query(info.query_);
-      const auto &path = url_query.path_;
-      if (path.size() == 1 &&
-          ((path[0] == "resolve" && url_query.get_arg("domain") == "oauth" && !url_query.get_arg("startapp").empty()) ||
-           (path[0] == "oauth" && !url_query.get_arg("token").empty()))) {
-        td_->create_handler<RequestUrlAuthQuery>(std::move(promise))->send(link, MessageFullId(), 0);
-        return;
-      }
-    }
     return promise.set_value(std::move(default_result));
   }
 
