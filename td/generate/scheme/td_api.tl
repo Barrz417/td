@@ -12045,6 +12045,14 @@ getExternalLink link:string match_code:string allow_write_access:Bool allow_phon
 //@url URL of the link
 getOauthLinkInfo url:string = OauthLinkInfo;
 
+//@description Accepts an OAuth authorization request. Returns an HTTP URL to open after successful authorization.
+//-May return an empty link if just a toast about successful login has to be shown
+//@url URL of the OAuth deep link
+//@match_code The matching code chosen by the user
+//@allow_write_access Pass true if the current user allowed the bot that was returned in getOauthLinkInfo, to send them messages
+//@allow_phone_number_access Pass true if the current user allowed the bot that was returned in getOauthLinkInfo, to access their phone number
+acceptOauthRequest url:string match_code:string allow_write_access:Bool allow_phone_number_access:Bool = HttpUrl;
+
 
 //@description Marks all mentions in a chat as read @chat_id Chat identifier
 readAllChatMentions chat_id:int53 = Ok;

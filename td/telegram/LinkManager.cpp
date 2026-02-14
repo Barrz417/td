@@ -3980,6 +3980,13 @@ void LinkManager::get_link_login_url(const string &url, const string &match_code
       ->send(url, MessageFullId(), 0, allow_write_access, allow_phone_number_access, match_code);
 }
 
+void LinkManager::accept_oauth_request(const string &url, const string &match_code, bool allow_write_access,
+                                       bool allow_phone_number_access,
+                                       Promise<td_api::object_ptr<td_api::httpUrl>> &&promise) {
+  td_->create_handler<AcceptUrlAuthQuery>(std::move(promise))
+      ->send(url, MessageFullId(), 0, allow_write_access, allow_phone_number_access, match_code);
+}
+
 void LinkManager::get_oauth_link_info(string &&link, Promise<td_api::object_ptr<td_api::oauthLinkInfo>> &&promise) {
   auto parsed_link = parse_internal_link(link);
   if (parsed_link == nullptr) {
