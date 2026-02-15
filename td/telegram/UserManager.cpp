@@ -557,31 +557,28 @@ class UploadProfilePhotoQuery final : public Td::ResultHandler {
     is_fallback_ = is_fallback;
     only_suggest_ = only_suggest;
 
-    if (td_->user_manager_->is_user_bot(user_id) != td_->auth_manager_->is_bot()) {
+    telegram_api::object_ptr<telegram_api::InputUser> input_user;
+    if (user_id != td_->user_manager_->get_my_id()) {
       auto r_input_user = td_->user_manager_->get_input_user(user_id);
       if (r_input_user.is_error()) {
         return on_error(r_input_user.move_as_error());
       }
-      int32 flags = telegram_api::photos_uploadProfilePhoto::VIDEO_EMOJI_MARKUP_MASK |
-                    telegram_api::photos_uploadProfilePhoto::BOT_MASK;
+      input_user = r_input_user.move_as_ok();
+    }
+    if (td_->user_manager_->is_user_bot(user_id) != td_->auth_manager_->is_bot() ||
+        user_id == td_->user_manager_->get_my_id()) {
+      int32 flags = telegram_api::photos_uploadProfilePhoto::VIDEO_EMOJI_MARKUP_MASK;
+      if (input_user != nullptr) {
+        flags |= telegram_api::photos_uploadProfilePhoto::BOT_MASK;
+      }
       send_query(G()->net_query_creator().create(
-          telegram_api::photos_uploadProfilePhoto(flags, is_fallback, r_input_user.move_as_ok(), nullptr, nullptr, 0.0,
+          telegram_api::photos_uploadProfilePhoto(flags, is_fallback, std::move(input_user), nullptr, nullptr, 0.0,
                                                   sticker_photo_size->get_input_video_size_object(td_)),
           {{user_id}}));
-    } else if (user_id == td_->user_manager_->get_my_id()) {
-      int32 flags = telegram_api::photos_uploadProfilePhoto::VIDEO_EMOJI_MARKUP_MASK;
-      send_query(G()->net_query_creator().create(
-          telegram_api::photos_uploadProfilePhoto(flags, is_fallback, nullptr, nullptr, nullptr, 0.0,
-                                                  sticker_photo_size->get_input_video_size_object(td_)),
-          {{"me"}}));
     } else {
-      auto r_input_user = td_->user_manager_->get_input_user(user_id);
-      if (r_input_user.is_error()) {
-        return on_error(r_input_user.move_as_error());
-      }
       int32 flags = telegram_api::photos_uploadContactProfilePhoto::VIDEO_EMOJI_MARKUP_MASK;
       send_query(G()->net_query_creator().create(
-          telegram_api::photos_uploadContactProfilePhoto(flags, only_suggest, !only_suggest, r_input_user.move_as_ok(),
+          telegram_api::photos_uploadContactProfilePhoto(flags, only_suggest, !only_suggest, std::move(input_user),
                                                          nullptr, nullptr, 0.0,
                                                          sticker_photo_size->get_input_video_size_object(td_)),
           {{user_id}}));
