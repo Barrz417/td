@@ -8027,6 +8027,9 @@ class CliClient final : public Actor {
       string match_code;
       get_args(args, link, match_code);
       send_request(td_api::make_object<td_api::acceptOauthRequest>(link, match_code, op == "aorw", op == "aorp"));
+    } else if (op == "dor") {
+      const string &link = args;
+      send_request(td_api::make_object<td_api::declineOauthRequest>(link));
     } else if (op == "racm") {
       ChatId chat_id;
       get_args(args, chat_id);

@@ -1784,6 +1784,32 @@ class AcceptUrlAuthQuery final : public Td::ResultHandler {
   }
 };
 
+class DeclineUrlAuthQuery final : public Td::ResultHandler {
+  Promise<Unit> promise_;
+
+ public:
+  explicit DeclineUrlAuthQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
+  }
+
+  void send(string url) {
+    send_query(G()->net_query_creator().create(telegram_api::messages_declineUrlAuth(url)));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::messages_declineUrlAuth>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    promise_.set_value(Unit());
+  }
+
+  void on_error(Status status) final {
+    LOG(INFO) << "Receive error for DeclineUrlAuthQuery: " << status;
+    promise_.set_value(Unit());
+  }
+};
+
 LinkManager::LinkManager(Td *td, ActorShared<> parent) : td_(td), parent_(std::move(parent)) {
 }
 
@@ -3984,6 +4010,10 @@ void LinkManager::accept_oauth_request(const string &url, const string &match_co
                                        Promise<td_api::object_ptr<td_api::httpUrl>> &&promise) {
   td_->create_handler<AcceptUrlAuthQuery>(std::move(promise))
       ->send(url, MessageFullId(), 0, allow_write_access, allow_phone_number_access, match_code);
+}
+
+void LinkManager::decline_oauth_request(const string &url, Promise<Unit> &&promise) {
+  td_->create_handler<DeclineUrlAuthQuery>(std::move(promise))->send(url);
 }
 
 void LinkManager::get_oauth_link_info(string &&link, Promise<td_api::object_ptr<td_api::oauthLinkInfo>> &&promise) {

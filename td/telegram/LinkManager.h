@@ -88,6 +88,8 @@ class LinkManager final : public Actor {
   void accept_oauth_request(const string &url, const string &match_code, bool allow_write_access,
                             bool allow_phone_number_access, Promise<td_api::object_ptr<td_api::httpUrl>> &&promise);
 
+  void decline_oauth_request(const string &url, Promise<Unit> &&promise);
+
   static Result<string> get_background_url(const string &name,
                                            td_api::object_ptr<td_api::BackgroundType> background_type);
 

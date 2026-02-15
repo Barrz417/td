@@ -12051,6 +12051,10 @@ getOauthLinkInfo url:string = OauthLinkInfo;
 //@allow_phone_number_access Pass true if the current user allowed the bot that was returned in getOauthLinkInfo, to access their phone number
 acceptOauthRequest url:string match_code:string allow_write_access:Bool allow_phone_number_access:Bool = HttpUrl;
 
+//@description Declines an OAuth authorization request
+//@url URL of the OAuth deep link
+declineOauthRequest url:string = Ok;
+
 
 //@description Marks all mentions in a chat as read @chat_id Chat identifier
 readAllChatMentions chat_id:int53 = Ok;

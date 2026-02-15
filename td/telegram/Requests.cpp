@@ -3419,6 +3419,13 @@ void Requests::on_request(uint64 id, td_api::acceptOauthRequest &request) {
                                            request.allow_phone_number_access_, std::move(promise));
 }
 
+void Requests::on_request(uint64 id, td_api::declineOauthRequest &request) {
+  CHECK_IS_USER();
+  CLEAN_INPUT_STRING(request.url_);
+  CREATE_OK_REQUEST_PROMISE();
+  td_->link_manager_->decline_oauth_request(request.url_, std::move(promise));
+}
+
 void Requests::on_request(uint64 id, const td_api::getChatHistory &request) {
   CHECK_IS_USER();
   CREATE_REQUEST(GetChatHistoryRequest, request.chat_id_, request.from_message_id_, request.offset_, request.limit_,
