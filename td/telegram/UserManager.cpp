@@ -524,29 +524,26 @@ class UploadProfilePhotoQuery final : public Td::ResultHandler {
       flags |= telegram_api::photos_uploadProfilePhoto::FILE_MASK;
       photo_input_file = std::move(input_file);
     }
-    if (td_->user_manager_->is_user_bot(user_id) != td_->auth_manager_->is_bot()) {
+    telegram_api::object_ptr<telegram_api::InputUser> input_user;
+    if (user_id != td_->user_manager_->get_my_id()) {
       auto r_input_user = td_->user_manager_->get_input_user(user_id);
       if (r_input_user.is_error()) {
         return on_error(r_input_user.move_as_error());
       }
-      flags |= telegram_api::photos_uploadProfilePhoto::BOT_MASK;
+      input_user = r_input_user.move_as_ok();
+    }
+    if (td_->user_manager_->is_user_bot(user_id) != td_->auth_manager_->is_bot()) {
+      if (input_user != nullptr) {
+        flags |= telegram_api::photos_uploadProfilePhoto::BOT_MASK;
+      }
       send_query(G()->net_query_creator().create(
-          telegram_api::photos_uploadProfilePhoto(flags, is_fallback, r_input_user.move_as_ok(),
+          telegram_api::photos_uploadProfilePhoto(flags, is_fallback, std::move(input_user),
                                                   std::move(photo_input_file), std::move(video_input_file),
                                                   main_frame_timestamp, nullptr),
           {{user_id}}));
-    } else if (user_id == td_->user_manager_->get_my_id()) {
-      send_query(G()->net_query_creator().create(
-          telegram_api::photos_uploadProfilePhoto(flags, is_fallback, nullptr, std::move(photo_input_file),
-                                                  std::move(video_input_file), main_frame_timestamp, nullptr),
-          {{"me"}}));
     } else {
-      auto r_input_user = td_->user_manager_->get_input_user(user_id);
-      if (r_input_user.is_error()) {
-        return on_error(r_input_user.move_as_error());
-      }
       send_query(G()->net_query_creator().create(
-          telegram_api::photos_uploadContactProfilePhoto(flags, only_suggest, !only_suggest, r_input_user.move_as_ok(),
+          telegram_api::photos_uploadContactProfilePhoto(flags, only_suggest, !only_suggest, std::move(input_user),
                                                          std::move(photo_input_file), std::move(video_input_file),
                                                          main_frame_timestamp, nullptr),
           {{user_id}}));
