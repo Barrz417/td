@@ -31184,7 +31184,7 @@ void MessagesManager::do_delete_message_log_event(const DeleteMessageLogEvent &l
 }
 
 int64 MessagesManager::get_message_reply_to_random_id(const Dialog *d, const Message *m) const {
-  auto same_chat_reply_to_message_id = m->replied_message_info.get_same_chat_reply_to_message_id(false);
+  auto same_chat_reply_to_message_id = m->replied_message_info.get_same_chat_reply_to_message_id(true);
   if (same_chat_reply_to_message_id != MessageId() && m->message_id.is_yet_unsent() &&
       (d->dialog_id.get_type() == DialogType::SecretChat || same_chat_reply_to_message_id.is_yet_unsent())) {
     auto *replied_m = get_message(d, same_chat_reply_to_message_id);

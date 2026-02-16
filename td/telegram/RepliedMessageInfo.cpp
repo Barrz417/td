@@ -345,7 +345,7 @@ MessageId RepliedMessageInfo::get_same_chat_reply_to_message_id(bool ignore_exte
   if (message_id_ == MessageId()) {
     return {};
   }
-  if (ignore_external && !origin_.is_empty()) {
+  if (!ignore_external && !origin_.is_empty()) {
     return {};
   }
   return dialog_id_ == DialogId() ? message_id_ : MessageId();
