@@ -14086,7 +14086,8 @@ upgradeGift business_connection_id:string received_gift_id:string keep_original_
 buyGiftUpgrade owner_id:MessageSender prepaid_upgrade_hash:string star_count:int53 = Ok;
 
 //@description Crafts a new gift from other gifts that will be permanently lost
-//@received_gift_ids Identifier of the gifts to use for crafting
+//@received_gift_ids Identifier of the gifts to use for crafting. In the case of a successful craft, the resulting gift will have the number of the first gift.
+//-Consequently, the first gift must not have been withdrawn to the TON blockchain as an NFT and must have an empty gift_address
 craftGift received_gift_ids:vector<string> = CraftGiftResult;
 
 //@description Sends an upgraded gift to another user or channel chat
