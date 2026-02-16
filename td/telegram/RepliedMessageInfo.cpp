@@ -146,6 +146,17 @@ RepliedMessageInfo::RepliedMessageInfo(Td *td, const MessageInputReplyTo &input_
         quote_ = MessageQuote::create_automatic_quote(td, std::move(*content_text));
       }
       *content_text = FormattedText();
+
+      if (content_->get_type() == MessageContentType::Text) {
+        auto content = get_message_content_object(content_.get(), td, DialogId(), MessageId(), false, true, DialogId(),
+                                                  0, false, true, -1, false, false);
+        if (content->get_id() == td_api::messageText::ID) {
+          const auto *message_text = static_cast<const td_api::messageText *>(content.get());
+          if (message_text->link_preview_ == nullptr && message_text->link_preview_options_ == nullptr) {
+            content_ = nullptr;
+          }
+        }
+      }
     }
     auto origin_message_full_id = origin_.get_message_full_id();
     if (origin_message_full_id.get_message_id().is_valid()) {
