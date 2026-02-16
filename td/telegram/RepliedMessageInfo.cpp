@@ -14,6 +14,7 @@
 #include "td/telegram/MessageCopyOptions.h"
 #include "td/telegram/MessageFullId.h"
 #include "td/telegram/MessagesManager.h"
+#include "td/telegram/MessageTopic.h"
 #include "td/telegram/OptionManager.h"
 #include "td/telegram/ScheduledServerMessageId.h"
 #include "td/telegram/ServerMessageId.h"
@@ -122,7 +123,7 @@ RepliedMessageInfo::RepliedMessageInfo(Td *td, tl_object_ptr<telegram_api::messa
   todo_item_id_ = max(0, reply_header->todo_item_id_);
 }
 
-RepliedMessageInfo::RepliedMessageInfo(Td *td, const MessageInputReplyTo &input_reply_to) {
+RepliedMessageInfo::RepliedMessageInfo(Td *td, const MessageInputReplyTo &input_reply_to, const MessageTopic &topic) {
   if (!input_reply_to.message_id_.is_valid() && !input_reply_to.message_id_.is_valid_scheduled()) {
     return;
   }
@@ -154,6 +155,10 @@ RepliedMessageInfo::RepliedMessageInfo(Td *td, const MessageInputReplyTo &input_
       dialog_id_ = input_reply_to.dialog_id_;
     } else {
       message_id_ = MessageId();
+
+      if (topic.is_forum() && !topic.is_forum_general()) {
+        message_id_ = topic.get_forum_topic_id().to_top_thread_message_id();
+      }
     }
   }
 }
