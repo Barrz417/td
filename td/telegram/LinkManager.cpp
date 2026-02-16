@@ -1705,8 +1705,13 @@ class RequestUrlOauthQuery final : public Td::ResultHandler {
           return on_error(Status::Error(500, "Receive invalid bot_user_id"));
         }
         td_->user_manager_->on_get_user(std::move(request->bot_), "RequestUrlAuthQuery");
+        auto user_id = UserId(request->user_id_hint_);
+        if (user_id != UserId() && !user_id.is_valid()) {
+          LOG(ERROR) << "Receive " << to_string(request);
+          user_id = UserId();
+        }
         promise_.set_value(td_api::make_object<td_api::oauthLinkInfo>(
-            url_, request->domain_, td_->user_manager_->get_user_id_object(bot_user_id, "oauthLinkInfo"),
+            user_id.get(), url_, request->domain_, td_->user_manager_->get_user_id_object(bot_user_id, "oauthLinkInfo"),
             request->request_write_access_, request->request_phone_number_, request->browser_, request->platform_,
             request->ip_, request->region_, std::move(request->match_codes_)));
         break;

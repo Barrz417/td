@@ -3470,6 +3470,8 @@ loginUrlInfoRequestConfirmation url:string domain:string bot_user_id:int53 reque
 
 
 //@description Information about the OAuth authorization
+//@user_id Identifier of the user for which the link was generated; may be 0 if unknown. The corresponding user may be unknown.
+//-If the user is logged in the app, then they must be chosen for authorization by default
 //@url An HTTP URL where the users authorizes
 //@domain A domain of the URL
 //@bot_user_id User identifier of a bot linked with the website
@@ -3480,7 +3482,7 @@ loginUrlInfoRequestConfirmation url:string domain:string bot_user_id:int53 reque
 //@ip_address IP address from which the authorization is performed, in human-readable format
 //@location Human-readable description of a country and a region from which the authorization is performed, based on the IP address
 //@match_codes The list of codes to match; may be empty if irrelevant
-oauthLinkInfo url:string domain:string bot_user_id:int53 request_write_access:Bool request_phone_number_access:Bool browser:string platform:string ip_address:string location:string match_codes:vector<string> = OauthLinkInfo;
+oauthLinkInfo user_id:int53 url:string domain:string bot_user_id:int53 request_write_access:Bool request_phone_number_access:Bool browser:string platform:string ip_address:string location:string match_codes:vector<string> = OauthLinkInfo;
 
 
 //@description Contains parameters of the application theme
