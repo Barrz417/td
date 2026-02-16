@@ -6122,7 +6122,7 @@ bool UserManager::delete_my_profile_photo_from_cache(int64 profile_photo_id) {
 void UserManager::delete_profile_photo(int64 profile_photo_id, bool is_recursive, Promise<Unit> &&promise) {
   TRY_STATUS_PROMISE(promise, G()->close_status());
   const UserFull *user_full = get_user_full_force(get_my_id(), "delete_profile_photo");
-  if (user_full == nullptr) {
+  if (user_full == nullptr || (td_->auth_manager_->is_bot() && !is_recursive)) {
     // must load UserFull first, because fallback photo can't be deleted via DeleteProfilePhotoQuery
     if (is_recursive) {
       return promise.set_error(500, "Failed to load UserFullInfo");
