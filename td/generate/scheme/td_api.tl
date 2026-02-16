@@ -3472,7 +3472,7 @@ loginUrlInfoRequestConfirmation url:string domain:string bot_user_id:int53 reque
 //@description Information about the OAuth authorization
 //@user_id Identifier of the user for which the link was generated; may be 0 if unknown. The corresponding user may be unknown.
 //-If the user is logged in the app, then they must be chosen for authorization by default
-//@url An HTTP URL where the users authorizes
+//@url An HTTP URL where the user authorizes
 //@domain A domain of the URL
 //@bot_user_id User identifier of a bot linked with the website
 //@request_write_access True, if the user must be asked for the permission to the bot to send them messages
@@ -9859,6 +9859,12 @@ updateSupergroupFullInfo supergroup_id:int53 supergroup_full_info:supergroupFull
 //@type Notification type. If type begins with "AUTH_KEY_DROP_", then two buttons "Cancel" and "Log out" must be shown under notification; if user presses the second, all local data must be destroyed using Destroy method
 //@content Notification content
 updateServiceNotification type:string content:MessageContent = Update;
+
+//@description An OAuth authorization request was received
+//@domain A domain of the URL where the user authorizes
+//@location Human-readable description of a country and a region from which the authorization is performed, based on the IP address
+//@url The URL to pass to getOauthLinkInfo; the link is valid for 60 seconds
+updateNewOauthRequest domain:string location:string url:string = Update;
 
 //@description Information about a file was updated @file New data about the file
 updateFile file:file = Update;
