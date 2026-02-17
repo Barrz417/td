@@ -9486,6 +9486,14 @@ void ChatManager::on_get_channel_forbidden(telegram_api::channelForbidden &chann
     c->is_changed = true;
     need_invalidate_channel_full = true;
   }
+  if (c->is_monoforum && c->monoforum_channel_id == ChannelId()) {
+    auto expected_monoforum_channel_id =
+        ChannelId(channel_id.get() - (G()->is_test_dc() ? 1300000000000ll : 1070000000000ll));
+    if (expected_monoforum_channel_id.is_valid()) {
+      c->monoforum_channel_id = expected_monoforum_channel_id;
+      c->need_save_to_database = true;
+    }
+  }
   if (c->join_to_send != join_to_send || c->join_request != join_request) {
     c->join_to_send = join_to_send;
     c->join_request = join_request;
