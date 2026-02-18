@@ -5666,6 +5666,13 @@ class CliClient final : public Actor {
       bool has_protected_content;
       get_args(args, chat_id, has_protected_content);
       send_request(td_api::make_object<td_api::toggleChatHasProtectedContent>(chat_id, has_protected_content));
+    } else if (op == "pchpcdr") {
+      ChatId chat_id;
+      MessageId message_id;
+      bool approve;
+      get_args(args, chat_id, message_id, approve);
+      send_request(
+          td_api::make_object<td_api::processChatHasProtectedContentDisableRequest>(chat_id, message_id, approve));
     } else if (op == "tcip" || op == "tcipa" || begins_with(op, "tcip-")) {
       ChatId chat_id;
       bool is_pinned;

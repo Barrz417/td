@@ -208,7 +208,8 @@ class DialogManager final : public Actor {
   void set_dialog_emoji_status(DialogId dialog_id, const unique_ptr<EmojiStatus> &emoji_status,
                                Promise<Unit> &&promise);
 
-  void toggle_dialog_has_protected_content(DialogId dialog_id, bool has_protected_content, Promise<Unit> &&promise);
+  void toggle_dialog_has_protected_content(DialogId dialog_id, MessageId request_message_id, bool is_request,
+                                           bool has_protected_content, Promise<Unit> &&promise);
 
   void set_dialog_description(DialogId dialog_id, const string &description, Promise<Unit> &&promise);
 

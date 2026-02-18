@@ -12277,6 +12277,12 @@ setChatNotificationSettings chat_id:int53 notification_settings:chatNotification
 //@has_protected_content New value of has_protected_content
 toggleChatHasProtectedContent chat_id:int53 has_protected_content:Bool = Ok;
 
+//@description Processes request to disable has_protected_content in a chat
+//@chat_id Chat identifier
+//@request_message_id Identifier of the message with the request. The message must be incoming and has content of the type messageChatHasProtectedContentDisableRequested
+//@approve Pass true to approve the request; pass false to reject the request
+processChatHasProtectedContentDisableRequest chat_id:int53 request_message_id:int53 approve:Bool = Ok;
+
 //@description Changes the view_as_topics setting of a forum chat or Saved Messages @chat_id Chat identifier @view_as_topics New value of view_as_topics
 toggleChatViewAsTopics chat_id:int53 view_as_topics:Bool = Ok;
 

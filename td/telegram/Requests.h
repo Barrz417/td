@@ -1006,6 +1006,8 @@ class Requests {
 
   void on_request(uint64 id, const td_api::toggleChatHasProtectedContent &request);
 
+  void on_request(uint64 id, const td_api::processChatHasProtectedContentDisableRequest &request);
+
   void on_request(uint64 id, const td_api::toggleChatIsPinned &request);
 
   void on_request(uint64 id, const td_api::toggleChatViewAsTopics &request);

@@ -403,12 +403,18 @@ class ToggleNoForwardsQuery final : public Td::ResultHandler {
   explicit ToggleNoForwardsQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
   }
 
-  void send(DialogId dialog_id, bool has_protected_content) {
+  void send(DialogId dialog_id, MessageId request_message_id, bool has_protected_content) {
     dialog_id_ = dialog_id;
     auto input_peer = td_->dialog_manager_->get_input_peer(dialog_id, AccessRights::Read);
     CHECK(input_peer != nullptr);
+    auto request_msg_id = request_message_id.get_server_message_id().get();
+    int32 flags = 0;
+    if (request_msg_id) {
+      flags |= telegram_api::messages_toggleNoForwards::REQUEST_MSG_ID_MASK;
+    }
     send_query(G()->net_query_creator().create(
-        telegram_api::messages_toggleNoForwards(0, std::move(input_peer), has_protected_content, 0), {{dialog_id_}}));
+        telegram_api::messages_toggleNoForwards(flags, std::move(input_peer), has_protected_content, request_msg_id),
+        {{dialog_id_}}));
   }
 
   void on_result(BufferSlice packet) final {
@@ -2636,7 +2642,8 @@ void DialogManager::set_dialog_emoji_status(DialogId dialog_id, const unique_ptr
   promise.set_error(400, "Can't change emoji status in the chat");
 }
 
-void DialogManager::toggle_dialog_has_protected_content(DialogId dialog_id, bool has_protected_content,
+void DialogManager::toggle_dialog_has_protected_content(DialogId dialog_id, MessageId request_message_id,
+                                                        bool is_request, bool has_protected_content,
                                                         Promise<Unit> &&promise) {
   TRY_STATUS_PROMISE(promise,
                      check_dialog_access(dialog_id, false, AccessRights::Read, "toggle_dialog_has_protected_content"));
@@ -2664,13 +2671,16 @@ void DialogManager::toggle_dialog_has_protected_content(DialogId dialog_id, bool
     default:
       UNREACHABLE();
   }
-
-  // TODO this can be wrong if there were previous toggle_dialog_has_protected_content requests
-  if (get_dialog_has_protected_content_force(dialog_id, true) == has_protected_content) {
-    return promise.set_value(Unit());
+  if (is_request) {
+    if (!request_message_id.is_server()) {
+      return promise.set_error(400, "Invalid message identifier specified");
+    }
+  } else {
+    CHECK(request_message_id == MessageId());
   }
 
-  td_->create_handler<ToggleNoForwardsQuery>(std::move(promise))->send(dialog_id, has_protected_content);
+  td_->create_handler<ToggleNoForwardsQuery>(std::move(promise))
+      ->send(dialog_id, request_message_id, has_protected_content);
 }
 
 void DialogManager::set_dialog_description(DialogId dialog_id, const string &description, Promise<Unit> &&promise) {
