@@ -4818,6 +4818,12 @@ messageChatOwnerLeft new_owner_user_id:int53 = MessageContent;
 //@description The owner of the chat has changed @new_owner_user_id Identifier of the user who is the new owner of the chat
 messageChatOwnerChanged new_owner_user_id:int53 = MessageContent;
 
+//@description Chat has_protected_content setting was changed or request to change it was rejected
+//@request_message_id Identifier of the message with the request to change the setting; can be an identifier of a deleted message or 0
+//@old_has_protected_content Previous value of the setting
+//@new_has_protected_content New value of the setting
+messageChatHasProtectedContentToggled request_message_id:int53 old_has_protected_content:Bool new_has_protected_content:Bool = MessageContent;
+
 //@description New chat members were added @member_user_ids User identifiers of the new members
 messageChatAddMembers member_user_ids:vector<int53> = MessageContent;
 
@@ -10597,6 +10603,7 @@ getMessageLocally chat_id:int53 message_id:int53 = Message;
 //-for messageSuggestedPostApprovalFailed, messageSuggestedPostApproved, messageSuggestedPostDeclined, messageSuggestedPostPaid, messageSuggestedPostRefunded,
 //-the message with the regular gift that was upgraded for messageUpgradedGift with origin of the type upgradedGiftOriginUpgrade,
 //-the message with gift purchase offer for messageUpgradedGiftPurchaseOfferRejected,
+//-the message with the request to disable content protection for messageChatHasProtectedContentToggled,
 //-and the topic creation message for topic messages without non-bundled replied message. Returns a 404 error if the message doesn't exist
 //@chat_id Identifier of the chat the message belongs to
 //@message_id Identifier of the reply message
