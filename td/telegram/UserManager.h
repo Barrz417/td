@@ -186,7 +186,8 @@ class UserManager final : public Actor {
 
   void on_update_user_wallpaper_overridden(UserId user_id, bool wallpaper_overridden);
 
-  void on_update_user_noforwards(UserId user_id, bool noforwards_my_enabled, bool noforwards_peer_enabled);
+  void on_update_user_noforwards(UserId user_id, bool update_my, bool noforwards_my_enabled, bool update_peer,
+                                 bool noforwards_peer_enabled);
 
   void on_update_user_note(UserId user_id, FormattedText &&note);
 
@@ -989,7 +990,7 @@ class UserManager final : public Actor {
 
   void on_update_user_full_wallpaper_overridden(UserFull *user_full, bool wallpaper_overridden) const;
 
-  void on_update_user_full_noforwards(UserFull *user_full, bool noforwards_my_enabled,
+  void on_update_user_full_noforwards(UserFull *user_full, bool update_my, bool noforwards_my_enabled, bool update_peer,
                                       bool noforwards_peer_enabled) const;
 
   static void on_update_user_full_menu_button(UserFull *user_full,

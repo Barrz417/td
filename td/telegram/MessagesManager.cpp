@@ -30530,7 +30530,7 @@ MessagesManager::Message *MessagesManager::add_message_to_dialog(Dialog *d, uniq
     speculatively_update_active_group_call_id(d, m);
     speculatively_update_channel_participants(dialog_id, m);
     apply_updates_from_service_message_content(td_, m->content.get(), dialog_id,
-                                               get_message_forum_topic_id(dialog_id, m));
+                                               get_message_forum_topic_id(dialog_id, m), get_message_sender(m));
     update_sent_message_contents(dialog_id, m);
     update_used_hashtags(dialog_id, m);
     update_top_dialogs(dialog_id, m);

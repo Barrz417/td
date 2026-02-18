@@ -4355,7 +4355,8 @@ void UserManager::on_update_user_full_wallpaper_overridden(UserFull *user_full, 
   }
 }
 
-void UserManager::on_update_user_noforwards(UserId user_id, bool noforwards_my_enabled, bool noforwards_peer_enabled) {
+void UserManager::on_update_user_noforwards(UserId user_id, bool update_my, bool noforwards_my_enabled,
+                                            bool update_peer, bool noforwards_peer_enabled) {
   if (!user_id.is_valid()) {
     LOG(ERROR) << "Receive invalid " << user_id;
     return;
@@ -4365,23 +4366,24 @@ void UserManager::on_update_user_noforwards(UserId user_id, bool noforwards_my_e
   if (user_full == nullptr) {
     return;
   }
-  on_update_user_full_noforwards(user_full, noforwards_my_enabled, noforwards_peer_enabled);
+  on_update_user_full_noforwards(user_full, update_my, noforwards_my_enabled, update_peer, noforwards_peer_enabled);
   update_user_full(user_full, user_id, "on_update_user_noforwards");
 }
 
-void UserManager::on_update_user_full_noforwards(UserFull *user_full, bool noforwards_my_enabled,
-                                                 bool noforwards_peer_enabled) const {
+void UserManager::on_update_user_full_noforwards(UserFull *user_full, bool update_my, bool noforwards_my_enabled,
+                                                 bool update_peer, bool noforwards_peer_enabled) const {
   CHECK(user_full != nullptr);
   bool old_noforwards = user_full->noforwards_my_enabled || user_full->noforwards_peer_enabled;
-  if (user_full->noforwards_my_enabled != noforwards_my_enabled) {
+  if (update_my && user_full->noforwards_my_enabled != noforwards_my_enabled) {
     user_full->noforwards_my_enabled = noforwards_my_enabled;
     user_full->need_save_to_database = true;
   }
-  if (user_full->noforwards_peer_enabled != noforwards_peer_enabled) {
+  if (update_peer && user_full->noforwards_peer_enabled != noforwards_peer_enabled) {
     user_full->noforwards_peer_enabled = noforwards_peer_enabled;
     user_full->need_save_to_database = true;
   }
-  if (old_noforwards != user_full->noforwards_my_enabled || user_full->noforwards_peer_enabled) {
+  bool new_noforwards = user_full->noforwards_my_enabled || user_full->noforwards_peer_enabled;
+  if (old_noforwards != new_noforwards) {
     user_full->is_has_protected_content_changed = true;
   }
 }
@@ -8684,7 +8686,7 @@ void UserManager::on_get_user_full(telegram_api::object_ptr<telegram_api::userFu
       user_full, StarManager::get_star_count(user->settings_->charge_paid_message_stars_));
   on_update_user_full_send_paid_message_stars(user_full, StarManager::get_star_count(user->send_paid_messages_stars_));
   on_update_user_full_wallpaper_overridden(user_full, user->wallpaper_overridden_);
-  on_update_user_full_noforwards(user_full, user->noforwards_my_enabled_, user->noforwards_peer_enabled_);
+  on_update_user_full_noforwards(user_full, true, user->noforwards_my_enabled_, true, user->noforwards_peer_enabled_);
   on_update_user_full_note(user_full,
                            get_formatted_text(this, std::move(user->note_), true, false, "on_get_user_full note"));
 

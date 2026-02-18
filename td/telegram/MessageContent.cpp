@@ -12139,7 +12139,7 @@ void add_message_content_dependencies(Dependencies &dependencies, const MessageC
 }
 
 void apply_updates_from_service_message_content(Td *td, const MessageContent *content, DialogId dialog_id,
-                                                ForumTopicId forum_topic_id) {
+                                                ForumTopicId forum_topic_id, DialogId sender_dialog_id) {
   switch (content->get_type()) {
     case MessageContentType::TopicEdit:
       if (forum_topic_id.is_valid()) {
@@ -12149,8 +12149,10 @@ void apply_updates_from_service_message_content(Td *td, const MessageContent *co
       return;
     case MessageContentType::NoForwardsToggle:
       if (dialog_id.get_type() == DialogType::User) {
-        return td->user_manager_->reload_user_full(dialog_id.get_user_id(), Promise<Unit>(),
-                                                   "apply_updates_from_service_message_content");
+        bool new_value = static_cast<const MessageNoForwardsToggle *>(content)->new_value;
+        return td->user_manager_->on_update_user_noforwards(dialog_id.get_user_id(),
+                                                            sender_dialog_id == td->dialog_manager_->get_my_dialog_id(),
+                                                            new_value, sender_dialog_id == dialog_id, new_value);
       }
       return;
     default:

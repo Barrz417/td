@@ -356,7 +356,7 @@ void add_message_content_dependencies(Dependencies &dependencies, const MessageC
                                       UserId my_user_id, bool is_bot);
 
 void apply_updates_from_service_message_content(Td *td, const MessageContent *content, DialogId dialog_id,
-                                                ForumTopicId forum_topic_id);
+                                                ForumTopicId forum_topic_id, DialogId sender_dialog_id);
 
 void on_sent_message_content(Td *td, const MessageContent *content);
 
