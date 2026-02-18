@@ -12272,7 +12272,7 @@ setChatDraftMessage chat_id:int53 topic_id:MessageTopic draft_message:draftMessa
 setChatNotificationSettings chat_id:int53 notification_settings:chatNotificationSettings = Ok;
 
 //@description Changes the ability of users to save, forward, or copy chat content. Requires owner privileges in basic groups, supergroups and channels.
-//-Requires Telegram Premium to enable protected content in private chats
+//-Requires Telegram Premium to enable protected content in private chats. Not available in Saved Messages and private chats with bots or support accounts
 //@chat_id Chat identifier
 //@has_protected_content New value of has_protected_content
 toggleChatHasProtectedContent chat_id:int53 has_protected_content:Bool = Ok;
