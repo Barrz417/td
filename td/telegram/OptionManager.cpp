@@ -208,6 +208,7 @@ OptionManager::OptionManager(Td *td)
   set_default_integer_option("login_passkey_count_max", 5);
   set_default_integer_option("stake_dice_stake_amount_max", 50000000000);
   set_default_integer_option("stake_dice_stake_amount_min", 100000000);
+  set_default_integer_option("has_protected_content_disable_request_duration", is_test_dc ? 300 : 86400);
 
   if (options.isset("my_phone_number") || !options.isset("my_id")) {
     update_premium_options();
