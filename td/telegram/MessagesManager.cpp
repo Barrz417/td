@@ -30529,8 +30529,8 @@ MessagesManager::Message *MessagesManager::add_message_to_dialog(Dialog *d, uniq
   if (from_update && !m->is_failed_to_send) {
     speculatively_update_active_group_call_id(d, m);
     speculatively_update_channel_participants(dialog_id, m);
-    update_forum_topic_info_by_service_message_content(td_, m->content.get(), dialog_id,
-                                                       get_message_forum_topic_id(dialog_id, m));
+    apply_updates_from_service_message_content(td_, m->content.get(), dialog_id,
+                                               get_message_forum_topic_id(dialog_id, m));
     update_sent_message_contents(dialog_id, m);
     update_used_hashtags(dialog_id, m);
     update_top_dialogs(dialog_id, m);

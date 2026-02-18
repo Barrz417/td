@@ -355,8 +355,8 @@ void update_failed_to_send_message_content(Td *td, unique_ptr<MessageContent> &c
 void add_message_content_dependencies(Dependencies &dependencies, const MessageContent *message_content,
                                       UserId my_user_id, bool is_bot);
 
-void update_forum_topic_info_by_service_message_content(Td *td, const MessageContent *content, DialogId dialog_id,
-                                                        ForumTopicId forum_topic_id);
+void apply_updates_from_service_message_content(Td *td, const MessageContent *content, DialogId dialog_id,
+                                                ForumTopicId forum_topic_id);
 
 void on_sent_message_content(Td *td, const MessageContent *content);
 

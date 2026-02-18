@@ -12138,15 +12138,21 @@ void add_message_content_dependencies(Dependencies &dependencies, const MessageC
   add_formatted_text_dependencies(dependencies, get_message_content_text(message_content));
 }
 
-void update_forum_topic_info_by_service_message_content(Td *td, const MessageContent *content, DialogId dialog_id,
-                                                        ForumTopicId forum_topic_id) {
-  if (!forum_topic_id.is_valid()) {
-    return;
-  }
+void apply_updates_from_service_message_content(Td *td, const MessageContent *content, DialogId dialog_id,
+                                                ForumTopicId forum_topic_id) {
   switch (content->get_type()) {
     case MessageContentType::TopicEdit:
-      return td->forum_topic_manager_->on_forum_topic_edited(
-          dialog_id, forum_topic_id, static_cast<const MessageTopicEdit *>(content)->edited_data);
+      if (forum_topic_id.is_valid()) {
+        return td->forum_topic_manager_->on_forum_topic_edited(
+            dialog_id, forum_topic_id, static_cast<const MessageTopicEdit *>(content)->edited_data);
+      }
+      return;
+    case MessageContentType::NoForwardsToggle:
+      if (dialog_id.get_type() == DialogType::User) {
+        return td->user_manager_->reload_user_full(dialog_id.get_user_id(), Promise<Unit>(),
+                                                   "apply_updates_from_service_message_content");
+      }
+      return;
     default:
       // nothing to do
       return;
