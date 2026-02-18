@@ -4375,7 +4375,7 @@ void UserManager::on_update_user_full_noforwards(UserFull *user_full, bool nofor
   bool old_noforwards = user_full->noforwards_my_enabled || user_full->noforwards_peer_enabled;
   if (user_full->noforwards_my_enabled != noforwards_my_enabled) {
     user_full->noforwards_my_enabled = noforwards_my_enabled;
-    user_full->is_changed = true;
+    user_full->need_save_to_database = true;
   }
   if (user_full->noforwards_peer_enabled != noforwards_peer_enabled) {
     user_full->noforwards_peer_enabled = noforwards_peer_enabled;
@@ -5460,6 +5460,22 @@ bool UserManager::get_user_has_protected_content(UserId user_id) const {
   auto user_full = get_user_full(user_id);
   if (user_full != nullptr) {
     return user_full->noforwards_my_enabled || user_full->noforwards_peer_enabled;
+  }
+  return false;
+}
+
+bool UserManager::get_user_has_protected_content_force_by_me(UserId user_id) {
+  auto user_full = get_user_full_force(user_id, "get_user_has_protected_content_force_by_me");
+  if (user_full != nullptr) {
+    return user_full->noforwards_my_enabled;
+  }
+  return false;
+}
+
+bool UserManager::get_user_has_protected_content_force_by_other(UserId user_id) {
+  auto user_full = get_user_full_force(user_id, "get_user_has_protected_content_force_by_other");
+  if (user_full != nullptr) {
+    return user_full->noforwards_peer_enabled;
   }
   return false;
 }

@@ -317,6 +317,10 @@ class UserManager final : public Actor {
 
   bool get_user_has_protected_content(UserId user_id) const;
 
+  bool get_user_has_protected_content_force_by_me(UserId user_id);
+
+  bool get_user_has_protected_content_force_by_other(UserId user_id);
+
   bool get_user_stories_hidden(UserId user_id) const;
 
   bool can_poll_user_active_stories(UserId user_id) const;
