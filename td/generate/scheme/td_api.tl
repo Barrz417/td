@@ -4824,6 +4824,9 @@ messageChatOwnerChanged new_owner_user_id:int53 = MessageContent;
 //@new_has_protected_content New value of the setting
 messageChatHasProtectedContentToggled request_message_id:int53 old_has_protected_content:Bool new_has_protected_content:Bool = MessageContent;
 
+//@description Chat has_protected_content setting was requested to be disabled @is_expired True, if the request has expired
+messageChatHasProtectedContentDisableRequested is_expired:Bool = MessageContent;
+
 //@description New chat members were added @member_user_ids User identifiers of the new members
 messageChatAddMembers member_user_ids:vector<int53> = MessageContent;
 

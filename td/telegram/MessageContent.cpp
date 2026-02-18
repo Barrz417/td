@@ -542,7 +542,7 @@ class MessageChatSetTtl final : public MessageContent {
 
 class MessageUnsupported final : public MessageContent {
  public:
-  static constexpr int32 CURRENT_VERSION = 56;
+  static constexpr int32 CURRENT_VERSION = 57;
   int32 version = CURRENT_VERSION;
 
   MessageUnsupported() = default;
@@ -1710,6 +1710,22 @@ class MessageNoForwardsToggle final : public MessageContent {
   }
 };
 
+class MessageNoForwardsRequest final : public MessageContent {
+ public:
+  bool is_expired;
+  bool prev_value;
+  bool new_value;
+
+  MessageNoForwardsRequest() = default;
+  explicit MessageNoForwardsRequest(bool is_expired, bool prev_value, bool new_value)
+      : is_expired(is_expired), prev_value(prev_value), new_value(new_value) {
+  }
+
+  MessageContentType get_type() const final {
+    return MessageContentType::NoForwardsRequest;
+  }
+};
+
 template <class StorerT>
 static void store(const MessageContent *content, StorerT &storer) {
   CHECK(content != nullptr);
@@ -2803,6 +2819,15 @@ static void store(const MessageContent *content, StorerT &storer) {
       if (has_request_message_id) {
         store(m->request_message_id, storer);
       }
+      break;
+    }
+    case MessageContentType::NoForwardsRequest: {
+      const auto *m = static_cast<const MessageNoForwardsRequest *>(content);
+      BEGIN_STORE_FLAGS();
+      STORE_FLAG(m->is_expired);
+      STORE_FLAG(m->prev_value);
+      STORE_FLAG(m->new_value);
+      END_STORE_FLAGS();
       break;
     }
     default:
@@ -4178,6 +4203,16 @@ static void parse(unique_ptr<MessageContent> &content, ParserT &parser) {
       content = std::move(m);
       break;
     }
+    case MessageContentType::NoForwardsRequest: {
+      auto m = make_unique<MessageNoForwardsRequest>();
+      BEGIN_PARSE_FLAGS();
+      PARSE_FLAG(m->is_expired);
+      PARSE_FLAG(m->prev_value);
+      PARSE_FLAG(m->new_value);
+      END_PARSE_FLAGS();
+      content = std::move(m);
+      break;
+    }
 
     default:
       is_bad = true;
@@ -5006,6 +5041,7 @@ bool can_message_content_have_input_media(const Td *td, const MessageContent *co
     case MessageContentType::NewCreatorPending:
     case MessageContentType::ChangeCreator:
     case MessageContentType::NoForwardsToggle:
+    case MessageContentType::NoForwardsRequest:
       return false;
     case MessageContentType::Animation:
     case MessageContentType::Audio:
@@ -5171,6 +5207,7 @@ SecretInputMedia get_message_content_secret_input_media(
     case MessageContentType::NewCreatorPending:
     case MessageContentType::ChangeCreator:
     case MessageContentType::NoForwardsToggle:
+    case MessageContentType::NoForwardsRequest:
       break;
     default:
       UNREACHABLE();
@@ -5369,6 +5406,7 @@ static telegram_api::object_ptr<telegram_api::InputMedia> get_message_content_in
     case MessageContentType::NewCreatorPending:
     case MessageContentType::ChangeCreator:
     case MessageContentType::NoForwardsToggle:
+    case MessageContentType::NoForwardsRequest:
       break;
     default:
       UNREACHABLE();
@@ -5600,6 +5638,7 @@ void delete_message_content_thumbnail(MessageContent *content, Td *td, int32 med
     case MessageContentType::NewCreatorPending:
     case MessageContentType::ChangeCreator:
     case MessageContentType::NoForwardsToggle:
+    case MessageContentType::NoForwardsRequest:
       break;
     default:
       UNREACHABLE();
@@ -5864,6 +5903,7 @@ Status can_send_message_content(DialogId dialog_id, const MessageContent *conten
     case MessageContentType::NewCreatorPending:
     case MessageContentType::ChangeCreator:
     case MessageContentType::NoForwardsToggle:
+    case MessageContentType::NoForwardsRequest:
       UNREACHABLE();
   }
   return Status::OK();
@@ -6051,6 +6091,7 @@ static int32 get_message_content_media_index_mask(const MessageContent *content,
     case MessageContentType::NewCreatorPending:
     case MessageContentType::ChangeCreator:
     case MessageContentType::NoForwardsToggle:
+    case MessageContentType::NoForwardsRequest:
       return 0;
     default:
       UNREACHABLE();
@@ -6466,6 +6507,8 @@ vector<UserId> get_message_content_min_user_ids(const Td *td, const MessageConte
       return {content->new_creator_user_id};
     }
     case MessageContentType::NoForwardsToggle:
+      break;
+    case MessageContentType::NoForwardsRequest:
       break;
     default:
       UNREACHABLE();
@@ -6941,6 +6984,7 @@ void merge_message_contents(Td *td, const MessageContent *old_content, MessageCo
     case MessageContentType::NewCreatorPending:
     case MessageContentType::ChangeCreator:
     case MessageContentType::NoForwardsToggle:
+    case MessageContentType::NoForwardsRequest:
       break;
     default:
       UNREACHABLE();
@@ -7114,6 +7158,7 @@ bool merge_message_content_file_id(Td *td, MessageContent *message_content, File
     case MessageContentType::NewCreatorPending:
     case MessageContentType::ChangeCreator:
     case MessageContentType::NoForwardsToggle:
+    case MessageContentType::NoForwardsRequest:
       LOG(ERROR) << "Receive new file " << new_file_id << " in a sent message of the type " << content_type;
       break;
     default:
@@ -7894,6 +7939,16 @@ void compare_message_contents(Td *td, const MessageContent *old_content, const M
       if (lhs->request_message_id != rhs->request_message_id || lhs->prev_value != rhs->prev_value ||
           lhs->new_value != rhs->new_value) {
         need_update = true;
+      }
+      break;
+    }
+    case MessageContentType::NoForwardsRequest: {
+      const auto *lhs = static_cast<const MessageNoForwardsRequest *>(old_content);
+      const auto *rhs = static_cast<const MessageNoForwardsRequest *>(new_content);
+      if (lhs->is_expired != rhs->is_expired) {
+        need_update = true;
+      } else if (lhs->prev_value != rhs->prev_value || lhs->new_value != rhs->new_value) {
+        is_content_changed = true;
       }
       break;
     }
@@ -9274,6 +9329,7 @@ unique_ptr<MessageContent> dup_message_content(Td *td, DialogId dialog_id, const
     case MessageContentType::NewCreatorPending:
     case MessageContentType::ChangeCreator:
     case MessageContentType::NoForwardsToggle:
+    case MessageContentType::NoForwardsRequest:
       return nullptr;
     default:
       UNREACHABLE();
@@ -10083,8 +10139,14 @@ unique_ptr<MessageContent> get_action_message_content(Td *td, tl_object_ptr<tele
       }
       return td::make_unique<MessageNoForwardsToggle>(reply_to_message_id, action->prev_value_, action->new_value_);
     }
-    case telegram_api::messageActionNoForwardsRequest::ID:
-      return td::make_unique<MessageUnsupported>();
+    case telegram_api::messageActionNoForwardsRequest::ID: {
+      auto action = telegram_api::move_object_as<telegram_api::messageActionNoForwardsRequest>(action_ptr);
+      if (!action->prev_value_ || action->new_value_) {
+        LOG(ERROR) << "Receive " << to_string(action);
+        return td::make_unique<MessageUnsupported>();
+      }
+      return td::make_unique<MessageNoForwardsRequest>(action->expired_, action->prev_value_, action->new_value_);
+    }
     default:
       UNREACHABLE();
   }
@@ -10819,6 +10881,10 @@ td_api::object_ptr<td_api::MessageContent> get_message_content_object(
       return td_api::make_object<td_api::messageChatHasProtectedContentToggled>(m->request_message_id.get(),
                                                                                 m->prev_value, m->new_value);
     }
+    case MessageContentType::NoForwardsRequest: {
+      const auto *m = static_cast<const MessageNoForwardsRequest *>(content);
+      return td_api::make_object<td_api::messageChatHasProtectedContentDisableRequested>(m->is_expired);
+    }
     default:
       UNREACHABLE();
       return nullptr;
@@ -11524,6 +11590,7 @@ string get_message_content_search_text(const Td *td, const MessageContent *conte
     case MessageContentType::NewCreatorPending:
     case MessageContentType::ChangeCreator:
     case MessageContentType::NoForwardsToggle:
+    case MessageContentType::NoForwardsRequest:
       return string();
     default:
       UNREACHABLE();
@@ -12061,6 +12128,8 @@ void add_message_content_dependencies(Dependencies &dependencies, const MessageC
       break;
     }
     case MessageContentType::NoForwardsToggle:
+      break;
+    case MessageContentType::NoForwardsRequest:
       break;
     default:
       UNREACHABLE();
