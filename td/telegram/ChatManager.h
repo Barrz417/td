@@ -427,7 +427,7 @@ class ChatManager final : public Actor {
     int32 pinned_message_version = -1;
     ChannelId migrated_to_channel_id;
 
-    DialogParticipantStatus status = DialogParticipantStatus::Banned(0);
+    DialogParticipantStatus status = DialogParticipantStatus::Banned(0, string());
     RestrictedRights default_permissions{false,
                                          false,
                                          false,
@@ -524,7 +524,7 @@ class ChatManager final : public Actor {
     CustomEmojiId profile_background_custom_emoji_id;
     Usernames usernames;
     vector<RestrictionReason> restriction_reasons;
-    DialogParticipantStatus status = DialogParticipantStatus::Banned(0);
+    DialogParticipantStatus status = DialogParticipantStatus::Banned(0, string());
     RestrictedRights default_permissions{false,
                                          false,
                                          false,

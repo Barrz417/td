@@ -2098,34 +2098,34 @@ CustomEmojiId DialogManager::get_dialog_profile_background_custom_emoji_id(Dialo
 DialogParticipantStatus DialogManager::get_dialog_status(DialogId dialog_id) const {
   switch (dialog_id.get_type()) {
     case DialogType::User:
-      return DialogParticipantStatus::Member(0);
+      return DialogParticipantStatus::Member(0, string());
     case DialogType::Chat:
       return td_->chat_manager_->get_chat_status(dialog_id.get_chat_id());
     case DialogType::Channel:
       return td_->chat_manager_->get_channel_status(dialog_id.get_channel_id());
     case DialogType::SecretChat:
-      return DialogParticipantStatus::Member(0);
+      return DialogParticipantStatus::Member(0, string());
     case DialogType::None:
     default:
       UNREACHABLE();
-      return DialogParticipantStatus::Member(0);
+      return DialogParticipantStatus::Member(0, string());
   }
 }
 
 DialogParticipantStatus DialogManager::get_dialog_permissions(DialogId dialog_id) const {
   switch (dialog_id.get_type()) {
     case DialogType::User:
-      return DialogParticipantStatus::Member(0);
+      return DialogParticipantStatus::Member(0, string());
     case DialogType::Chat:
       return td_->chat_manager_->get_chat_permissions(dialog_id.get_chat_id());
     case DialogType::Channel:
       return td_->chat_manager_->get_channel_permissions(dialog_id.get_channel_id());
     case DialogType::SecretChat:
-      return DialogParticipantStatus::Member(0);
+      return DialogParticipantStatus::Member(0, string());
     case DialogType::None:
     default:
       UNREACHABLE();
-      return DialogParticipantStatus::Member(0);
+      return DialogParticipantStatus::Member(0, string());
   }
 }
 

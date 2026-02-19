@@ -2209,34 +2209,37 @@ chatAdministrators administrators:vector<chatAdministrator> = ChatAdministrators
 //@class ChatMemberStatus @description Provides information about the status of a member in a chat
 
 //@description The user is the owner of the chat and has all the administrator privileges
-//@custom_title A custom title of the owner; 0-16 characters without emoji; applicable to supergroups only
+//@custom_title A custom title of the owner; 0-16 characters without emoji; applicable to basic groups and supergroups only
 //@is_anonymous True, if the creator isn't shown in the chat member list and sends messages anonymously; applicable to supergroups only
 //@is_member True, if the user is a member of the chat
 chatMemberStatusCreator custom_title:string is_anonymous:Bool is_member:Bool = ChatMemberStatus;
 
 //@description The user is a member of the chat and has some additional privileges. In basic groups, administrators can edit and delete messages sent by others, add new members, ban unprivileged members, and manage video chats.
 //-In supergroups and channels, there are more detailed options for administrator privileges
-//@custom_title A custom title of the administrator; 0-16 characters without emoji; applicable to supergroups only
+//@custom_title A custom title of the administrator; 0-16 characters without emoji; applicable to basic groups and supergroups only
 //@can_be_edited True, if the current user can edit the administrator privileges for the called user
 //@rights Rights of the administrator
 chatMemberStatusAdministrator custom_title:string can_be_edited:Bool rights:chatAdministratorRights = ChatMemberStatus;
 
 //@description The user is a member of the chat, without any additional privileges or restrictions
+//@tag A tag of the member; 0-16 characters without emoji; applicable to basic groups and supergroups only
 //@member_until_date Point in time (Unix timestamp) when the user will be removed from the chat because of the expired subscription; 0 if never. Ignored in setChatMemberStatus
-chatMemberStatusMember member_until_date:int32 = ChatMemberStatus;
+chatMemberStatusMember tag:string member_until_date:int32 = ChatMemberStatus;
 
 //@description The user is under certain restrictions in the chat. Not supported in basic groups and channels
+//@tag A tag of the member; 0-16 characters without emoji; applicable to supergroups only
 //@is_member True, if the user is a member of the chat
 //@restricted_until_date Point in time (Unix timestamp) when restrictions will be lifted from the user; 0 if never. If the user is restricted for more than 366 days or for less than 30 seconds from the current time, the user is considered to be restricted forever
 //@permissions User permissions in the chat
-chatMemberStatusRestricted is_member:Bool restricted_until_date:int32 permissions:chatPermissions = ChatMemberStatus;
+chatMemberStatusRestricted tag:string is_member:Bool restricted_until_date:int32 permissions:chatPermissions = ChatMemberStatus;
 
 //@description The user or the chat is not a chat member
 chatMemberStatusLeft = ChatMemberStatus;
 
 //@description The user or the chat was banned (and hence is not a member of the chat). Implies the user can't return to the chat, view messages, or be used as a participant identifier to join a video chat of the chat
+//@tag A tag of the member; 0-16 characters without emoji; applicable to basic groups and supergroups only
 //@banned_until_date Point in time (Unix timestamp) when the user will be unbanned; 0 if never. If the user is banned for more than 366 days or for less than 30 seconds from the current time, the user is considered to be banned forever. Always 0 in basic groups
-chatMemberStatusBanned banned_until_date:int32 = ChatMemberStatus;
+chatMemberStatusBanned tag:string banned_until_date:int32 = ChatMemberStatus;
 
 
 //@description Describes a user or a chat as a member of another chat
@@ -2412,7 +2415,7 @@ basicGroupFullInfo photo:chatPhoto description:string creator_user_id:int53 memb
 //@id Supergroup or channel identifier
 //@usernames Usernames of the supergroup or channel; may be null
 //@date Point in time (Unix timestamp) when the current user joined, or the point in time when the supergroup or channel was created, in case the user is not a member
-//@status Status of the current user in the supergroup or channel; custom tag will always be empty
+//@status Status of the current user in the supergroup or channel; custom title and tag will always be empty
 //@member_count Number of members in the supergroup or channel; 0 if unknown. Currently, it is guaranteed to be known only if the supergroup or channel was received through
 //-getChatSimilarChats, getChatsToPostStories, getCreatedPublicChats, getGroupsInCommon, getInactiveSupergroupChats, getRecommendedChats, getSuitableDiscussionChats,
 //-getUserPrivacySettingRules, getVideoChatAvailableParticipants, searchPublicChats, or in chatFolderInviteLinkInfo.missing_chat_ids, or in userFullInfo.personal_chat_id,

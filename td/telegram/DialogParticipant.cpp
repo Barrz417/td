@@ -347,7 +347,7 @@ DialogParticipantStatus DialogParticipantStatus::Administrator(AdministratorRigh
                                                                bool can_be_edited) {
   uint64 flags = administrator_rights.flags_;
   if (flags == 0) {
-    return Member(0);
+    return Member(0, std::move(rank));
   }
   flags = flags | (static_cast<uint64>(can_be_edited) * CAN_BE_EDITED);
   return DialogParticipantStatus(
@@ -356,33 +356,34 @@ DialogParticipantStatus DialogParticipantStatus::Administrator(AdministratorRigh
       std::move(rank));
 }
 
-DialogParticipantStatus DialogParticipantStatus::Member(int32 member_until_date) {
+DialogParticipantStatus DialogParticipantStatus::Member(int32 member_until_date, string &&rank) {
   return DialogParticipantStatus(Type::Member, IS_MEMBER | RestrictedRights::ALL_RESTRICTED_RIGHTS, member_until_date,
-                                 string());
+                                 std::move(rank));
 }
 
 DialogParticipantStatus DialogParticipantStatus::Restricted(RestrictedRights restricted_rights, bool is_member,
-                                                            int32 restricted_until_date, ChannelType channel_type) {
+                                                            int32 restricted_until_date, ChannelType channel_type,
+                                                            string &&rank) {
   uint64 flags = restricted_rights.flags_;
   if (flags == RestrictedRights::ALL_RESTRICTED_RIGHTS || channel_type == ChannelType::Broadcast) {
-    return is_member ? Member(0) : Left();
+    return is_member ? Member(0, std::move(rank)) : Left();
   }
   flags |= (static_cast<uint64>(is_member) * IS_MEMBER);
-  return DialogParticipantStatus(Type::Restricted, flags, fix_until_date(restricted_until_date), string());
+  return DialogParticipantStatus(Type::Restricted, flags, fix_until_date(restricted_until_date), std::move(rank));
 }
 
 DialogParticipantStatus DialogParticipantStatus::Left() {
   return DialogParticipantStatus(Type::Left, RestrictedRights::ALL_RESTRICTED_RIGHTS, 0, string());
 }
 
-DialogParticipantStatus DialogParticipantStatus::Banned(int32 banned_until_date) {
-  return DialogParticipantStatus(Type::Banned, 0, fix_until_date(banned_until_date), string());
+DialogParticipantStatus DialogParticipantStatus::Banned(int32 banned_until_date, string &&rank) {
+  return DialogParticipantStatus(Type::Banned, 0, fix_until_date(banned_until_date), std::move(rank));
 }
 
-DialogParticipantStatus DialogParticipantStatus::GroupAdministrator(bool is_creator) {
+DialogParticipantStatus DialogParticipantStatus::GroupAdministrator(bool is_creator, string &&rank) {
   return Administrator(AdministratorRights(false, true, true, false, false, true, true, true, true, false, false, true,
                                            false, false, false, false, false, ChannelType::Unknown),
-                       string(), is_creator);
+                       std::move(rank), is_creator);
 }
 
 DialogParticipantStatus DialogParticipantStatus::ChannelAdministrator(bool is_creator, bool is_megagroup) {
@@ -402,14 +403,14 @@ DialogParticipantStatus::DialogParticipantStatus(bool can_be_edited,
 
 DialogParticipantStatus::DialogParticipantStatus(bool is_member,
                                                  tl_object_ptr<telegram_api::chatBannedRights> &&banned_rights,
-                                                 ChannelType channel_type) {
+                                                 ChannelType channel_type, string rank) {
   CHECK(banned_rights != nullptr);
   if (banned_rights->view_messages_) {
-    *this = Banned(banned_rights->until_date_);
+    *this = Banned(banned_rights->until_date_, std::move(rank));
     return;
   }
   if (channel_type == ChannelType::Broadcast) {
-    *this = is_member ? Member(0) : Left();
+    *this = is_member ? Member(0, std::move(rank)) : Left();
     return;
   }
 
@@ -418,7 +419,7 @@ DialogParticipantStatus::DialogParticipantStatus(bool is_member,
 
   // manually create Restricted status, because the user can be restricted, but with yet unknown restrictions
   uint64 flags = RestrictedRights(banned_rights, channel_type).flags_ | (static_cast<uint64>(is_member) * IS_MEMBER);
-  *this = DialogParticipantStatus(Type::Restricted, flags, until_date, string());
+  *this = DialogParticipantStatus(Type::Restricted, flags, until_date, std::move(rank));
 }
 
 RestrictedRights DialogParticipantStatus::get_effective_restricted_rights() const {
@@ -437,14 +438,14 @@ td_api::object_ptr<td_api::ChatMemberStatus> DialogParticipantStatus::get_chat_m
       return td_api::make_object<td_api::chatMemberStatusAdministrator>(
           rank_, can_be_edited(), get_administrator_rights().get_chat_administrator_rights_object());
     case Type::Member:
-      return td_api::make_object<td_api::chatMemberStatusMember>(until_date_);
+      return td_api::make_object<td_api::chatMemberStatusMember>(rank_, until_date_);
     case Type::Restricted:
       return td_api::make_object<td_api::chatMemberStatusRestricted>(
-          is_member(), until_date_, get_restricted_rights().get_chat_permissions_object());
+          rank_, is_member(), until_date_, get_restricted_rights().get_chat_permissions_object());
     case Type::Left:
       return td_api::make_object<td_api::chatMemberStatusLeft>();
     case Type::Banned:
-      return td_api::make_object<td_api::chatMemberStatusBanned>(until_date_);
+      return td_api::make_object<td_api::chatMemberStatusBanned>(rank_, until_date_);
     default:
       UNREACHABLE();
       return nullptr;
@@ -529,14 +530,14 @@ bool operator!=(const DialogParticipantStatus &lhs, const DialogParticipantStatu
 }
 
 StringBuilder &operator<<(StringBuilder &string_builder, const DialogParticipantStatus &status) {
+  if (!status.rank_.empty()) {
+    string_builder << " [" << status.rank_ << "]";
+  }
   switch (status.type_) {
     case DialogParticipantStatus::Type::Creator:
       string_builder << "Creator";
       if (!status.is_member()) {
         string_builder << "-non-member";
-      }
-      if (!status.rank_.empty()) {
-        string_builder << " [" << status.rank_ << "]";
       }
       if (status.is_anonymous()) {
         string_builder << "-anonymous";
@@ -546,9 +547,6 @@ StringBuilder &operator<<(StringBuilder &string_builder, const DialogParticipant
       string_builder << status.get_administrator_rights();
       if (status.can_be_edited()) {
         string_builder << "(can_be_edited)";
-      }
-      if (!status.rank_.empty()) {
-        string_builder << " [" << status.rank_ << "]";
       }
       return string_builder;
     case DialogParticipantStatus::Type::Member:
@@ -620,22 +618,37 @@ DialogParticipantStatus get_dialog_participant_status(const td_api::object_ptr<t
       return DialogParticipantStatus::Administrator(AdministratorRights(st->rights_, channel_type),
                                                     std::move(custom_title), true /*st->can_be_edited_*/);
     }
-    case td_api::chatMemberStatusMember::ID:
-      return DialogParticipantStatus::Member(0);
+    case td_api::chatMemberStatusMember::ID: {
+      auto st = static_cast<const td_api::chatMemberStatusMember *>(status.get());
+      auto tag = st->tag_;
+      if (!clean_input_string(tag)) {
+        tag.clear();
+      }
+      return DialogParticipantStatus::Member(0, std::move(tag));
+    }
     case td_api::chatMemberStatusRestricted::ID: {
       auto st = static_cast<const td_api::chatMemberStatusRestricted *>(status.get());
+      auto tag = st->tag_;
+      if (!clean_input_string(tag)) {
+        tag.clear();
+      }
       return DialogParticipantStatus::Restricted(RestrictedRights(st->permissions_, channel_type), st->is_member_,
-                                                 fix_until_date(st->restricted_until_date_), channel_type);
+                                                 fix_until_date(st->restricted_until_date_), channel_type,
+                                                 std::move(tag));
     }
     case td_api::chatMemberStatusLeft::ID:
       return DialogParticipantStatus::Left();
     case td_api::chatMemberStatusBanned::ID: {
       auto st = static_cast<const td_api::chatMemberStatusBanned *>(status.get());
-      return DialogParticipantStatus::Banned(fix_until_date(st->banned_until_date_));
+      auto tag = st->tag_;
+      if (!clean_input_string(tag)) {
+        tag.clear();
+      }
+      return DialogParticipantStatus::Banned(fix_until_date(st->banned_until_date_), std::move(tag));
     }
     default:
       UNREACHABLE();
-      return DialogParticipantStatus::Member(0);
+      return DialogParticipantStatus::Member(0, string());
   }
 }
 
@@ -658,19 +671,19 @@ DialogParticipant::DialogParticipant(tl_object_ptr<telegram_api::ChatParticipant
     case telegram_api::chatParticipant::ID: {
       auto participant = move_tl_object_as<telegram_api::chatParticipant>(participant_ptr);
       *this = {DialogId(UserId(participant->user_id_)), UserId(participant->inviter_id_), participant->date_,
-               DialogParticipantStatus::Member(0)};
+               DialogParticipantStatus::Member(0, std::move(participant->rank_))};
       break;
     }
     case telegram_api::chatParticipantCreator::ID: {
       auto participant = move_tl_object_as<telegram_api::chatParticipantCreator>(participant_ptr);
       *this = {DialogId(UserId(participant->user_id_)), UserId(participant->user_id_), chat_creation_date,
-               DialogParticipantStatus::Creator(true, false, string())};
+               DialogParticipantStatus::Creator(true, false, std::move(participant->rank_))};
       break;
     }
     case telegram_api::chatParticipantAdmin::ID: {
       auto participant = move_tl_object_as<telegram_api::chatParticipantAdmin>(participant_ptr);
       *this = {DialogId(UserId(participant->user_id_)), UserId(participant->inviter_id_), participant->date_,
-               DialogParticipantStatus::GroupAdministrator(is_creator)};
+               DialogParticipantStatus::GroupAdministrator(is_creator, std::move(participant->rank_))};
       break;
     }
     default:
@@ -686,13 +699,13 @@ DialogParticipant::DialogParticipant(tl_object_ptr<telegram_api::ChannelParticip
     case telegram_api::channelParticipant::ID: {
       auto participant = move_tl_object_as<telegram_api::channelParticipant>(participant_ptr);
       *this = {DialogId(UserId(participant->user_id_)), UserId(), participant->date_,
-               DialogParticipantStatus::Member(participant->subscription_until_date_)};
+               DialogParticipantStatus::Member(participant->subscription_until_date_, std::move(participant->rank_))};
       break;
     }
     case telegram_api::channelParticipantSelf::ID: {
       auto participant = move_tl_object_as<telegram_api::channelParticipantSelf>(participant_ptr);
       *this = {DialogId(UserId(participant->user_id_)), UserId(participant->inviter_id_), participant->date_,
-               DialogParticipantStatus::Member(participant->subscription_until_date_)};
+               DialogParticipantStatus::Member(participant->subscription_until_date_, std::move(participant->rank_))};
       break;
     }
     case telegram_api::channelParticipantCreator::ID: {
@@ -717,7 +730,8 @@ DialogParticipant::DialogParticipant(tl_object_ptr<telegram_api::ChannelParticip
     case telegram_api::channelParticipantBanned::ID: {
       auto participant = move_tl_object_as<telegram_api::channelParticipantBanned>(participant_ptr);
       *this = {DialogId(participant->peer_), UserId(participant->kicked_by_), participant->date_,
-               DialogParticipantStatus(!participant->left_, std::move(participant->banned_rights_), channel_type)};
+               DialogParticipantStatus(!participant->left_, std::move(participant->banned_rights_), channel_type,
+                                       std::move(participant->rank_))};
       break;
     }
     default:

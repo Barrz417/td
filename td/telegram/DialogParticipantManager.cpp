@@ -1464,8 +1464,10 @@ void DialogParticipantManager::on_update_bot_stopped(UserId user_id, int32 date,
     LOG(ERROR) << "Have no self-user to process updateBotStopped";
   }
 
-  DialogParticipant old_dialog_participant(DialogId(my_user_id), user_id, date, DialogParticipantStatus::Banned(0));
-  DialogParticipant new_dialog_participant(DialogId(my_user_id), user_id, date, DialogParticipantStatus::Member(0));
+  DialogParticipant old_dialog_participant(DialogId(my_user_id), user_id, date,
+                                           DialogParticipantStatus::Banned(0, string()));
+  DialogParticipant new_dialog_participant(DialogId(my_user_id), user_id, date,
+                                           DialogParticipantStatus::Member(0, string()));
   if (is_stopped) {
     std::swap(old_dialog_participant.status_, new_dialog_participant.status_);
   }
@@ -2164,9 +2166,9 @@ void DialogParticipantManager::ban_dialog_participant(DialogId dialog_id, Dialog
                                      std::move(promise));
     case DialogType::Channel:
       // must use td_api::chatMemberStatusBanned to properly fix banned_until_date
-      return set_channel_participant_status(dialog_id.get_channel_id(), participant_dialog_id,
-                                            td_api::make_object<td_api::chatMemberStatusBanned>(banned_until_date),
-                                            std::move(promise));
+      return set_channel_participant_status(
+          dialog_id.get_channel_id(), participant_dialog_id,
+          td_api::make_object<td_api::chatMemberStatusBanned>(string(), banned_until_date), std::move(promise));
     case DialogType::SecretChat:
       return promise.set_error(400, "Can't ban members in secret chats");
     case DialogType::None:
@@ -2435,7 +2437,7 @@ void DialogParticipantManager::add_channel_participant(
     return promise.set_error(400, "Not enough rights to invite members to the supergroup chat");
   }
 
-  speculative_add_channel_user(channel_id, user_id, DialogParticipantStatus::Member(0), old_status);
+  speculative_add_channel_user(channel_id, user_id, DialogParticipantStatus::Member(0, string()), old_status);
   vector<tl_object_ptr<telegram_api::InputUser>> input_users;
   input_users.push_back(std::move(input_user));
   td_->create_handler<InviteToChannelQuery>(std::move(promise))->send(channel_id, {user_id}, std::move(input_users));
@@ -2490,7 +2492,7 @@ void DialogParticipantManager::add_channel_participants(
     }
     input_users.push_back(std::move(input_user));
 
-    speculative_add_channel_user(channel_id, user_id, DialogParticipantStatus::Member(0),
+    speculative_add_channel_user(channel_id, user_id, DialogParticipantStatus::Member(0, string()),
                                  DialogParticipantStatus::Left());
   }
 
@@ -2524,7 +2526,7 @@ void DialogParticipantManager::set_channel_participant_status(
     // always pretend that old_status is different
     return restrict_channel_participant(
         channel_id, participant_dialog_id, std::move(new_status),
-        new_status.is_banned() ? DialogParticipantStatus::Left() : DialogParticipantStatus::Banned(0),
+        new_status.is_banned() ? DialogParticipantStatus::Left() : DialogParticipantStatus::Banned(0, string()),
         ignore_restricted_is_member, std::move(promise));
   }
 
@@ -2747,14 +2749,14 @@ void DialogParticipantManager::restrict_channel_participant(ChannelId channel_id
           PromiseCreator::lambda([actor_id, channel_id, participant_dialog_id, new_status = std::move(new_status),
                                   promise = std::move(promise)](Unit) mutable {
             send_closure(actor_id, &DialogParticipantManager::restrict_channel_participant, channel_id,
-                         participant_dialog_id, std::move(new_status), DialogParticipantStatus::Banned(0), false,
-                         std::move(promise));
+                         participant_dialog_id, std::move(new_status), DialogParticipantStatus::Banned(0, string()),
+                         false, std::move(promise));
           }))
           .release();
     });
 
     promise = std::move(on_result_promise);
-    new_status = DialogParticipantStatus::Banned(G()->unix_time() + 60);
+    new_status = DialogParticipantStatus::Banned(G()->unix_time() + 60, string(old_status.get_rank()));
   }
 
   if (new_status.is_member() && !old_status.is_member() && !ignore_is_member) {
@@ -2944,7 +2946,7 @@ void DialogParticipantManager::add_cached_channel_participants(ChannelId channel
     }
     if (!is_found) {
       is_participants_cache_changed = true;
-      participants.emplace_back(DialogId(user_id), inviter_user_id, date, DialogParticipantStatus::Member(0));
+      participants.emplace_back(DialogId(user_id), inviter_user_id, date, DialogParticipantStatus::Member(0, string()));
     }
   }
   if (is_participants_cache_changed) {

@@ -7149,7 +7149,7 @@ class CliClient final : public Actor {
       } else if (status_str == "left") {
         status = td_api::make_object<td_api::chatMemberStatusLeft>();
       } else if (status_str == "banned") {
-        status = td_api::make_object<td_api::chatMemberStatusBanned>(std::numeric_limits<int32>::max());
+        status = td_api::make_object<td_api::chatMemberStatusBanned>(string(), std::numeric_limits<int32>::max());
       } else if (status_str == "creator") {
         status = td_api::make_object<td_api::chatMemberStatusCreator>("", false, true);
       } else if (status_str == "creatortitle") {
@@ -7197,22 +7197,22 @@ class CliClient final : public Actor {
         status = td_api::make_object<td_api::chatMemberStatusAdministrator>("", true, nullptr);
       } else if (status_str == "rest") {
         status = td_api::make_object<td_api::chatMemberStatusRestricted>(
-            true, static_cast<int32>(120 + std::time(nullptr)),
+            string(), true, static_cast<int32>(120 + std::time(nullptr)),
             td_api::make_object<td_api::chatPermissions>(false, false, false, false, false, false, false, false, false,
                                                          false, false, false, false, false, false));
       } else if (status_str == "restkick") {
         status = td_api::make_object<td_api::chatMemberStatusRestricted>(
-            false, static_cast<int32>(120 + std::time(nullptr)),
+            string(), false, static_cast<int32>(120 + std::time(nullptr)),
             td_api::make_object<td_api::chatPermissions>(true, false, false, false, false, false, false, false, false,
                                                          false, false, false, false, false, false));
       } else if (status_str == "restunkick") {
         status = td_api::make_object<td_api::chatMemberStatusRestricted>(
-            true, static_cast<int32>(120 + std::time(nullptr)),
+            string(), true, static_cast<int32>(120 + std::time(nullptr)),
             td_api::make_object<td_api::chatPermissions>(true, false, false, false, false, false, false, false, false,
                                                          false, false, false, false, false, false));
       } else if (status_str == "unrest") {
         status = td_api::make_object<td_api::chatMemberStatusRestricted>(
-            true, 0,
+            string(), true, 0,
             td_api::make_object<td_api::chatPermissions>(true, true, true, true, true, true, true, true, true, true,
                                                          true, true, true, true, true));
       }

@@ -341,7 +341,7 @@ class DialogParticipantStatus {
   mutable Type type_;
   mutable int32 until_date_;  // member, restricted and banned only
   mutable uint64 flags_;
-  string rank_;  // creator and administrator only
+  string rank_;
 
   static int32 fix_until_date(int32 date);
 
@@ -361,17 +361,17 @@ class DialogParticipantStatus {
   static DialogParticipantStatus Administrator(AdministratorRights administrator_rights, string &&rank,
                                                bool can_be_edited);
 
-  static DialogParticipantStatus Member(int32 member_until_date);
+  static DialogParticipantStatus Member(int32 member_until_date, string &&rank);
 
   static DialogParticipantStatus Restricted(RestrictedRights restricted_rights, bool is_member,
-                                            int32 restricted_until_date, ChannelType channel_type);
+                                            int32 restricted_until_date, ChannelType channel_type, string &&rank);
 
   static DialogParticipantStatus Left();
 
-  static DialogParticipantStatus Banned(int32 banned_until_date);
+  static DialogParticipantStatus Banned(int32 banned_until_date, string &&rank);
 
   // legacy rights
-  static DialogParticipantStatus GroupAdministrator(bool is_creator);
+  static DialogParticipantStatus GroupAdministrator(bool is_creator, string &&rank);
 
   // legacy rights
   static DialogParticipantStatus ChannelAdministrator(bool is_creator, bool is_megagroup);
@@ -382,7 +382,7 @@ class DialogParticipantStatus {
 
   // forcely returns a restricted or banned
   DialogParticipantStatus(bool is_member, tl_object_ptr<telegram_api::chatBannedRights> &&banned_rights,
-                          ChannelType channel_type);
+                          ChannelType channel_type, string rank);
 
   bool has_all_administrator_rights(AdministratorRights administrator_rights) const {
     auto flags = administrator_rights.flags_ &
@@ -685,7 +685,7 @@ struct DialogParticipant {
 
   static DialogParticipant private_member(UserId user_id, UserId other_user_id) {
     auto inviter_user_id = other_user_id.is_valid() ? other_user_id : user_id;
-    return {DialogId(user_id), inviter_user_id, 0, DialogParticipantStatus::Member(0)};
+    return {DialogId(user_id), inviter_user_id, 0, DialogParticipantStatus::Member(0, string())};
   }
 
   bool is_valid() const;
