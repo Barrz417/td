@@ -4607,6 +4607,7 @@ void UserManager::on_update_phone_number_privacy() {
   CHECK(!td_->auth_manager_->is_bot());
   // all UserFull.need_phone_number_privacy_exception can be outdated now,
   // so mark all of them as expired
+  LOG(INFO) << "Updated phone number privacy settings";
   users_full_.foreach([&](const UserId &user_id, unique_ptr<UserFull> &user_full) { user_full->expires_at = 0.0; });
 }
 
@@ -4640,6 +4641,7 @@ void UserManager::on_update_freeze_state(int32 freeze_since_date, int32 freeze_u
 }
 
 void UserManager::invalidate_user_full(UserId user_id) {
+  LOG(INFO) << "Invalidate full information about " << user_id;
   auto user_full = get_user_full_force(user_id, "invalidate_user_full");
   if (user_full != nullptr) {
     td_->dialog_manager_->on_dialog_info_full_invalidated(DialogId(user_id));
@@ -9036,7 +9038,7 @@ void UserManager::on_load_user_full_from_database(UserId user_id, string value) 
   }
   dependencies.add(user_full->personal_channel_id);
   add_formatted_text_dependencies(dependencies, &user_full->note);
-  if (!dependencies.resolve_force(td_, "on_load_user_full_from_database")) {
+  if (!dependencies.resolve_force(td_, "on_load_user_full_from_database 1")) {
     users_full_.erase(user_id);
     G()->td_db()->get_sqlite_pmc()->erase(get_user_full_database_key(user_id), Auto());
     return;
@@ -9052,7 +9054,7 @@ void UserManager::on_load_user_full_from_database(UserId user_id, string value) 
 
   User *u = get_user(user_id);
   CHECK(u != nullptr);
-  drop_user_full_photos(user_full, user_id, u->photo.id, "on_load_user_full_from_database");
+  drop_user_full_photos(user_full, user_id, u->photo.id, "on_load_user_full_from_database 2");
   if (!user_full->photo.is_empty()) {
     register_user_photo(u, user_id, user_full->photo);
   }
@@ -9063,12 +9065,12 @@ void UserManager::on_load_user_full_from_database(UserId user_id, string value) 
   td_->group_call_manager_->on_update_dialog_about(DialogId(user_id), user_full->about, false);
 
   user_full->is_update_user_full_sent = true;
-  update_user_full(user_full, user_id, "on_load_user_full_from_database", true);
+  update_user_full(user_full, user_id, "on_load_user_full_from_database 3", true);
 
   if (is_user_deleted(u)) {
     drop_user_full(user_id);
   } else if (user_full->expires_at == 0.0) {
-    reload_user_full(user_id, Auto(), "on_load_user_full_from_database");
+    reload_user_full(user_id, Auto(), "on_load_user_full_from_database 4");
   }
 }
 
@@ -9115,6 +9117,8 @@ void UserManager::drop_user_full_photos(UserFull *user_full, UserId user_id, int
     }
   }
   if (expected_photo_id != get_user_full_profile_photo_id(user_full)) {
+    LOG(INFO) << "Drop full " << user_id << ", because expected photo " << expected_photo_id << " instead of "
+              << get_user_full_profile_photo_id(user_full) << " from " << source;
     user_full->expires_at = 0.0;
   }
   if (user_full->is_update_user_full_sent) {
@@ -9165,6 +9169,7 @@ void UserManager::drop_user_full(UserId user_id) {
     return;
   }
 
+  LOG(INFO) << "Drop full information about " << user_id;
   user_full->expires_at = 0.0;
 
   user_full->photo = Photo();
@@ -9178,8 +9183,6 @@ void UserManager::drop_user_full(UserId user_id) {
   user_full->has_private_calls = false;
   user_full->need_phone_number_privacy_exception = false;
   user_full->wallpaper_overridden = false;
-  user_full->noforwards_my_enabled = false;
-  user_full->noforwards_peer_enabled = false;
   user_full->about = string();
   user_full->bot_info = nullptr;
   user_full->gift_count = 0;
