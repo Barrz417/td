@@ -1027,6 +1027,7 @@ class MessagesManager final : public Actor {
     telegram_api::object_ptr<telegram_api::messageReactions> reactions;
     telegram_api::object_ptr<telegram_api::factCheck> fact_check;
     telegram_api::object_ptr<telegram_api::suggestedPost> suggested_post;
+    string sender_rank;
     int32 sender_boost_count = 0;
     int32 edit_date = 0;
     vector<RestrictionReason> restriction_reasons;
@@ -1097,6 +1098,7 @@ class MessagesManager final : public Actor {
 
     string author_signature;
     string summary_from_language;
+    string sender_rank;
 
     bool is_channel_post = false;
     bool is_topic_message = false;
