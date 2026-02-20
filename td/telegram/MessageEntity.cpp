@@ -58,7 +58,7 @@ int MessageEntity::get_type_priority(Type type) {
                                    94 /*Spoiler*/,
                                    99 /*CustomEmoji*/,
                                    0 /*ExpandableBlockQuote*/,
-                                   98 /*FormattedDate*/};
+                                   30 /*FormattedDate*/};
   static_assert(sizeof(priorities) / sizeof(priorities[0]) == static_cast<size_t>(MessageEntity::Type::Size), "");
   return priorities[static_cast<int32>(type)];
 }
@@ -1533,20 +1533,18 @@ static constexpr int32 get_continuous_entities_mask() {
          get_entity_type_mask(MessageEntity::Type::PhoneNumber) |
          get_entity_type_mask(MessageEntity::Type::BankCardNumber) |
          get_entity_type_mask(MessageEntity::Type::MediaTimestamp) |
-         get_entity_type_mask(MessageEntity::Type::CustomEmoji) |
-         get_entity_type_mask(MessageEntity::Type::FormattedDate);
+         get_entity_type_mask(MessageEntity::Type::CustomEmoji);
 }
 
 static constexpr int32 get_pre_entities_mask() {
   return get_entity_type_mask(MessageEntity::Type::Pre) | get_entity_type_mask(MessageEntity::Type::Code) |
-         get_entity_type_mask(MessageEntity::Type::PreCode);
+         get_entity_type_mask(MessageEntity::Type::PreCode) | get_entity_type_mask(MessageEntity::Type::FormattedDate);
 }
 
 static constexpr int32 get_user_entities_mask() {
   return get_splittable_entities_mask() | get_blockquote_entities_mask() |
          get_entity_type_mask(MessageEntity::Type::TextUrl) | get_entity_type_mask(MessageEntity::Type::MentionName) |
-         get_entity_type_mask(MessageEntity::Type::CustomEmoji) |
-         get_entity_type_mask(MessageEntity::Type::FormattedDate) | get_pre_entities_mask();
+         get_entity_type_mask(MessageEntity::Type::CustomEmoji) | get_pre_entities_mask();
 }
 
 static int32 is_splittable_entity(MessageEntity::Type type) {
