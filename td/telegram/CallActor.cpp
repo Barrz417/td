@@ -363,27 +363,8 @@ void CallActor::on_set_call_rating() {
   }
 }
 
-void CallActor::send_call_debug_information(string data, Promise<Unit> promise) {
-  if (!call_state_.need_debug_information) {
-    return promise.set_error(400, "Unexpected sendCallDebugInformation");
-  }
-  promise.set_value(Unit());
-  auto tl_query = telegram_api::phone_saveCallDebug(get_input_phone_call("send_call_debug_information"),
-                                                    make_tl_object<telegram_api::dataJSON>(std::move(data)));
-  auto query = G()->net_query_creator().create(tl_query);
-  send_with_promise(std::move(query),
-                    PromiseCreator::lambda([actor_id = actor_id(this)](Result<NetQueryPtr> r_net_query) {
-                      send_closure(actor_id, &CallActor::on_save_debug_query_result, std::move(r_net_query));
-                    }));
-  loop();
-}
-
-void CallActor::on_save_debug_query_result(Result<NetQueryPtr> r_net_query) {
-  auto res = fetch_result<telegram_api::phone_saveCallDebug>(std::move(r_net_query));
-  if (res.is_error()) {
-    return on_error(res.move_as_error());
-  }
-  if (!res.ok() && !call_state_.need_log) {
+void CallActor::on_save_debug_information(bool result) {
+  if (!result && !call_state_.need_log) {
     call_state_.need_log = true;
     call_state_need_flush_ = true;
   }
@@ -391,7 +372,9 @@ void CallActor::on_save_debug_query_result(Result<NetQueryPtr> r_net_query) {
     call_state_.need_debug_information = false;
     call_state_need_flush_ = true;
   }
-  loop();
+  if (call_state_need_flush_) {
+    loop();
+  }
 }
 
 void CallActor::send_call_log(td_api::object_ptr<td_api::InputFile> log_file, Promise<Unit> promise) {

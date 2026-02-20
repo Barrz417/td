@@ -56,6 +56,38 @@ class SetCallRatingQuery final : public Td::ResultHandler {
   }
 };
 
+class SaveCallDebugQuery final : public Td::ResultHandler {
+  Promise<Unit> promise_;
+  CallId call_id_;
+
+ public:
+  explicit SaveCallDebugQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
+  }
+
+  void send(CallId call_id, telegram_api::object_ptr<telegram_api::inputPhoneCall> input_phone_call,
+            const string &data) {
+    call_id_ = std::move(call_id);
+    send_query(G()->net_query_creator().create(telegram_api::phone_saveCallDebug(
+        std::move(input_phone_call), telegram_api::make_object<telegram_api::dataJSON>(std::move(data)))));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::phone_saveCallDebug>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    auto ptr = result_ptr.move_as_ok();
+    LOG(INFO) << "Receive result for SaveCallDebugQuery: " << ptr;
+    send_closure(G()->call_manager(), &CallManager::on_save_debug_information, std::move(call_id_), ptr);
+    promise_.set_value(Unit());
+  }
+
+  void on_error(Status status) final {
+    promise_.set_error(std::move(status));
+  }
+};
+
 CallManager::CallManager(Td *td, ActorShared<> parent) : td_(td), parent_(std::move(parent)) {
 }
 
@@ -245,13 +277,30 @@ void CallManager::on_set_call_rating(CallId call_id) {
   }
 }
 
-void CallManager::send_call_debug_information(CallId call_id, string data, Promise<Unit> promise) {
+void CallManager::on_save_debug_information(CallId call_id, bool result) {
   auto actor = get_call_actor(call_id);
-  if (actor.empty()) {
-    return promise.set_error(400, "Call not found");
+  if (!actor.empty()) {
+    send_closure(actor, &CallActor::on_save_debug_information, result);
   }
-  auto safe_promise = SafePromise<Unit>(std::move(promise), Status::Error(400, "Call not found"));
-  send_closure(actor, &CallActor::send_call_debug_information, std::move(data), std::move(safe_promise));
+}
+
+void CallManager::send_call_debug_information(CallId call_id, string data, Promise<Unit> promise) {
+  fetch_input_phone_call(
+      call_id, [actor_id = actor_id(this), call_id, data = std::move(data), promise = std::move(promise)](
+                   Result<telegram_api::object_ptr<telegram_api::inputPhoneCall>> r_input_phone_call) mutable {
+        if (r_input_phone_call.is_error()) {
+          return promise.set_error(r_input_phone_call.move_as_error());
+        }
+        send_closure(actor_id, &CallManager::do_send_call_debug_information, std::move(call_id),
+                     r_input_phone_call.move_as_ok(), std::move(data), std::move(promise));
+      });
+}
+
+void CallManager::do_send_call_debug_information(
+    CallId call_id, telegram_api::object_ptr<telegram_api::inputPhoneCall> input_phone_call, string data,
+    Promise<Unit> promise) {
+  TRY_STATUS_PROMISE(promise, G()->close_status());
+  td_->create_handler<SaveCallDebugQuery>(std::move(promise))->send(call_id, std::move(input_phone_call), data);
 }
 
 void CallManager::send_call_log(CallId call_id, td_api::object_ptr<td_api::InputFile> log_file, Promise<Unit> promise) {

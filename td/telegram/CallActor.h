@@ -118,7 +118,7 @@ class CallActor final : public NetQueryCallback {
 
   void on_set_call_rating();
 
-  void send_call_debug_information(string data, Promise<Unit> promise);
+  void on_save_debug_information(bool result);
 
   void send_call_log(td_api::object_ptr<td_api::InputFile> log_file, Promise<Unit> promise);
 
@@ -204,8 +204,6 @@ class CallActor final : public NetQueryCallback {
   void on_begin_exchanging_key();
 
   void on_call_discarded(CallDiscardReason reason, bool need_rating, bool need_debug, bool is_video);
-
-  void on_save_debug_query_result(Result<NetQueryPtr> r_net_query);
 
   void upload_log_file(FileUploadId file_upload_id, Promise<Unit> &&promise);
 

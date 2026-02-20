@@ -47,6 +47,8 @@ class CallManager final : public Actor {
 
   void on_set_call_rating(CallId call_id);
 
+  void on_save_debug_information(CallId call_id, bool result);
+
   void send_call_debug_information(CallId call_id, string data, Promise<Unit> promise);
 
   void send_call_log(CallId call_id, td_api::object_ptr<td_api::InputFile> log_file, Promise<Unit> promise);
@@ -83,6 +85,10 @@ class CallManager final : public Actor {
   void do_rate_call(CallId call_id, telegram_api::object_ptr<telegram_api::inputPhoneCall> input_phone_call,
                     int32 rating, string comment, vector<td_api::object_ptr<td_api::CallProblem>> &&problems,
                     Promise<Unit> promise);
+
+  void do_send_call_debug_information(CallId call_id,
+                                      telegram_api::object_ptr<telegram_api::inputPhoneCall> input_phone_call,
+                                      string data, Promise<Unit> promise);
 };
 
 }  // namespace td
