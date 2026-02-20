@@ -6957,7 +6957,6 @@ void ChatManager::on_update_chat_add_user(ChatId chat_id, UserId inviter_user_id
 
 void ChatManager::on_update_chat_edit_administrator(ChatId chat_id, UserId user_id, bool is_administrator,
                                                     int32 version) {
-  string rank;
   if (!chat_id.is_valid()) {
     LOG(ERROR) << "Receive invalid " << chat_id;
     return;
@@ -6988,8 +6987,8 @@ void ChatManager::on_update_chat_edit_administrator(ChatId chat_id, UserId user_
   }
   CHECK(c->version >= 0);
 
-  auto status = is_administrator ? DialogParticipantStatus::GroupAdministrator(c->status.is_creator(), std::move(rank))
-                                 : DialogParticipantStatus::Member(0, std::move(rank));
+  auto status = is_administrator ? DialogParticipantStatus::GroupAdministrator(c->status.is_creator(), string())
+                                 : DialogParticipantStatus::Member(0, string());
   if (version > c->version) {
     if (version != c->version + 1) {
       LOG(INFO) << "Administrators of " << chat_id << " with version " << c->version
@@ -7013,6 +7012,7 @@ void ChatManager::on_update_chat_edit_administrator(ChatId chat_id, UserId user_
     if (chat_full->version + 1 == version) {
       for (auto &participant : chat_full->participants) {
         if (participant.dialog_id_ == DialogId(user_id)) {
+          status.set_rank(string(participant.status_.get_rank()));
           participant.status_ = std::move(status);
           chat_full->is_changed = true;
           update_chat_full(chat_full, chat_id, "on_update_chat_edit_administrator");
