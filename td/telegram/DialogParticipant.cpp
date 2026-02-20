@@ -205,7 +205,7 @@ RestrictedRights::RestrictedRights(const td_api::object_ptr<td_api::chatPermissi
                            rights->can_send_other_messages_, rights->can_send_other_messages_,
                            rights->can_send_other_messages_, rights->can_add_link_previews_, rights->can_send_polls_,
                            rights->can_change_info_, rights->can_invite_users_, rights->can_pin_messages_,
-                           rights->can_create_topics_, rights->can_edit_custom_tag_, channel_type);
+                           rights->can_create_topics_, rights->can_edit_tag_, channel_type);
 }
 
 RestrictedRights::RestrictedRights(bool can_send_messages, bool can_send_audios, bool can_send_documents,
