@@ -711,6 +711,39 @@ class LeaveChannelQuery final : public Td::ResultHandler {
   }
 };
 
+class EditChatParticipantRankQuery final : public Td::ResultHandler {
+  Promise<Unit> promise_;
+
+ public:
+  explicit EditChatParticipantRankQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
+  }
+
+  void send(DialogId dialog_id, UserId user_id, const string &rank) {
+    auto input_peer = td_->dialog_manager_->get_input_peer(dialog_id, AccessRights::Read);
+    CHECK(input_peer != nullptr);
+    auto participant_input_peer = td_->dialog_manager_->get_input_peer(DialogId(user_id), AccessRights::Read);
+    CHECK(participant_input_peer != nullptr);
+    send_query(G()->net_query_creator().create(telegram_api::messages_editChatParticipantRank(
+        std::move(input_peer), std::move(participant_input_peer), rank)));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::messages_editChatParticipantRank>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    auto ptr = result_ptr.move_as_ok();
+    LOG(INFO) << "Receive result for EditChatParticipantRankQuery: " << to_string(ptr);
+    td_->updates_manager_->on_get_updates(std::move(ptr), std::move(promise_));
+  }
+
+  void on_error(Status status) final {
+    LOG(INFO) << "Receive error for EditChatParticipantRankQuery: " << status;
+    promise_.set_error(std::move(status));
+  }
+};
+
 class CanEditChatCreatorQuery final : public Td::ResultHandler {
   Promise<Unit> promise_;
 
@@ -2142,6 +2175,27 @@ void DialogParticipantManager::set_dialog_participant_status(
                                             std::move(chat_member_status), std::move(promise));
     case DialogType::SecretChat:
       return promise.set_error(400, "Chat member status can't be changed in secret chats");
+    case DialogType::None:
+    default:
+      UNREACHABLE();
+  }
+}
+
+void DialogParticipantManager::set_dialog_participant_rank(DialogId dialog_id, UserId user_id, string &&rank,
+                                                           Promise<Unit> &&promise) {
+  TRY_STATUS_PROMISE(promise, td_->dialog_manager_->check_dialog_access(dialog_id, false, AccessRights::Read,
+                                                                        "set_dialog_participant_rank 1"));
+  TRY_STATUS_PROMISE(promise, td_->dialog_manager_->check_dialog_access(DialogId(user_id), false, AccessRights::Read,
+                                                                        "set_dialog_participant_rank 2"));
+
+  switch (dialog_id.get_type()) {
+    case DialogType::User:
+      return promise.set_error(400, "Chat member tag can't be changed in private chats");
+    case DialogType::Chat:
+    case DialogType::Channel:
+      td_->create_handler<EditChatParticipantRankQuery>(std::move(promise))->send(dialog_id, user_id, rank);
+      break;
+    case DialogType::SecretChat:
     case DialogType::None:
     default:
       UNREACHABLE();

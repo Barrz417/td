@@ -5846,6 +5846,13 @@ void Requests::on_request(uint64 id, td_api::setChatMemberStatus &request) {
                                                                   std::move(request.status_), std::move(promise));
 }
 
+void Requests::on_request(uint64 id, td_api::setChatMemberTag &request) {
+  CLEAN_INPUT_STRING(request.tag_);
+  CREATE_OK_REQUEST_PROMISE();
+  td_->dialog_participant_manager_->set_dialog_participant_rank(DialogId(request.chat_id_), UserId(request.user_id_),
+                                                                std::move(request.tag_), std::move(promise));
+}
+
 void Requests::on_request(uint64 id, const td_api::banChatMember &request) {
   CREATE_OK_REQUEST_PROMISE();
   TRY_RESULT_PROMISE(promise, participant_dialog_id,

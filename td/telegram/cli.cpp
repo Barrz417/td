@@ -7222,6 +7222,12 @@ class CliClient final : public Actor {
       } else {
         LOG(ERROR) << "Unknown status \"" << status_str << "\"";
       }
+    } else if (op == "scmt") {
+      ChatId chat_id;
+      UserId user_id;
+      string tag;
+      get_args(args, chat_id, user_id, tag);
+      send_request(td_api::make_object<td_api::setChatMemberTag>(chat_id, user_id, tag));
     } else if (op == "cto") {
       send_request(td_api::make_object<td_api::canTransferOwnership>());
     } else if (op == "transferChatOwnership") {

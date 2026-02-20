@@ -12372,6 +12372,12 @@ addChatMembers chat_id:int53 user_ids:vector<int53> = FailedToAddMembers;
 //@status The new status of the member in the chat
 setChatMemberStatus chat_id:int53 member_id:MessageSender status:ChatMemberStatus = Ok;
 
+//@description Changes the tag or custom title of a chat member; requires can_manage_tags administrator right to change tag of other users; for basic groups and supergroups only
+//@chat_id Chat identifier
+//@user_id Identifier of the user, which tag is changed. Chats can't have member tags
+//@tag The new tag of the member in the chat; 0-16 characters without emoji
+setChatMemberTag chat_id:int53 user_id:int53 tag:string = Ok;
+
 //@description Bans a member in a chat; requires can_restrict_members administrator right. Members can't be banned in private or secret chats. In supergroups and channels, the user will not be able to return to the group on their own using invite links, etc., unless unbanned first
 //@chat_id Chat identifier
 //@member_id Member identifier
