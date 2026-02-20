@@ -7377,6 +7377,9 @@ premiumFeatureChecklists = PremiumFeature;
 //@description The ability to require a payment for incoming messages in new chats
 premiumFeaturePaidMessages = PremiumFeature;
 
+//@description The ability to enable content protection in private chats
+premiumFeatureProtectPrivateChatContent = PremiumFeature;
+
 
 //@class BusinessFeature @description Describes a feature available to Business user accounts
 
