@@ -7026,6 +7026,69 @@ void ChatManager::on_update_chat_edit_administrator(ChatId chat_id, UserId user_
   }
 }
 
+void ChatManager::on_update_chat_participant_rank(ChatId chat_id, UserId user_id, string &&rank, int32 version) {
+  if (!chat_id.is_valid()) {
+    LOG(ERROR) << "Receive invalid " << chat_id;
+    return;
+  }
+  if (!td_->user_manager_->have_min_user(user_id)) {
+    LOG(ERROR) << "Can't find " << user_id;
+    return;
+  }
+  LOG(INFO) << "Receive updateChatParticipantRank in " << chat_id << " with " << user_id << ", tag " << rank
+            << " with version " << version;
+
+  auto c = get_chat_force(chat_id, "on_update_chat_participant_rank");
+  if (c == nullptr) {
+    LOG(INFO) << "Ignoring update about members of unknown " << chat_id;
+    return;
+  }
+
+  if (c->status.is_left()) {
+    // possible if updates come out of order
+    LOG(WARNING) << "Receive on_update_chat_participant_rank for left " << chat_id << ". Couldn't apply it";
+
+    repair_chat_participants(chat_id);  // just in case
+    return;
+  }
+  if (version <= -1) {
+    LOG(ERROR) << "Receive wrong version " << version << " for " << chat_id;
+    return;
+  }
+  CHECK(c->version >= 0);
+
+  if (version > c->version) {
+    if (version != c->version + 1) {
+      LOG(INFO) << "Members of " << chat_id << " with version " << c->version << " has changed, but new version is "
+                << version;
+      repair_chat_participants(chat_id);
+      return;
+    }
+
+    c->version = version;
+    c->need_save_to_database = true;
+    update_chat(c, chat_id);
+  }
+
+  ChatFull *chat_full = get_chat_full_force(chat_id, "on_update_chat_participant_rank");
+  if (chat_full != nullptr) {
+    if (chat_full->version + 1 == version) {
+      for (auto &participant : chat_full->participants) {
+        if (participant.dialog_id_ == DialogId(user_id)) {
+          if (participant.status_.set_rank(std::move(rank))) {
+            chat_full->is_changed = true;
+            update_chat_full(chat_full, chat_id, "on_update_chat_participant_rank");
+          }
+          return;
+        }
+      }
+    }
+
+    // can't find chat member or version have increased too much
+    repair_chat_participants(chat_id);
+  }
+}
+
 void ChatManager::on_update_chat_delete_user(ChatId chat_id, UserId user_id, int32 version) {
   if (!chat_id.is_valid()) {
     LOG(ERROR) << "Receive invalid " << chat_id;

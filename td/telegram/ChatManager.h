@@ -154,6 +154,7 @@ class ChatManager final : public Actor {
   void on_update_chat_add_user(ChatId chat_id, UserId inviter_user_id, UserId user_id, int32 date, int32 version);
   void on_update_chat_description(ChatId chat_id, string &&description);
   void on_update_chat_edit_administrator(ChatId chat_id, UserId user_id, bool is_administrator, int32 version);
+  void on_update_chat_participant_rank(ChatId chat_id, UserId user_id, string &&rank, int32 version);
   void on_update_chat_delete_user(ChatId chat_id, UserId user_id, int32 version);
   void on_update_chat_default_permissions(ChatId chat_id, RestrictedRights default_permissions, int32 version);
   void on_update_chat_pinned_message(ChatId chat_id, MessageId pinned_message_id, int32 version);

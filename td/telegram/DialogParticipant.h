@@ -599,6 +599,14 @@ class DialogParticipantStatus {
     return rank_;
   }
 
+  bool set_rank(string &&rank) {
+    if (rank_ != rank) {
+      rank_ = std::move(rank);
+      return true;
+    }
+    return false;
+  }
+
   template <class StorerT>
   void store(StorerT &storer) const {
     uint64 stored_flags = flags_ | (static_cast<uint64>(static_cast<int32>(type_)) << TYPE_SHIFT);
