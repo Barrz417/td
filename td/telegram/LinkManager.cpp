@@ -438,7 +438,7 @@ static AdministratorRights get_administrator_rights(Slice rights, bool for_chann
       can_delete_stories = true;
     } else if (right == "manage_direct_messages") {
       can_manage_direct_messages = true;
-    } else if (right == "manage_custom_tags") {
+    } else if (right == "manage_tags") {
       can_manage_ranks = true;
     } else if (right == "anonymous") {
       is_anonymous = true;
@@ -498,7 +498,7 @@ static string get_admin_string(AdministratorRights rights) {
     admin_rights.emplace_back("manage_direct_messages");
   }
   if (rights.can_manage_ranks()) {
-    admin_rights.emplace_back("manage_custom_tags");
+    admin_rights.emplace_back("manage_tags");
   }
   if (rights.is_anonymous()) {
     admin_rights.emplace_back("anonymous");
