@@ -6254,10 +6254,6 @@ void ChatManager::on_get_chat_participants(tl_object_ptr<telegram_api::ChatParti
       }
 
       if (chat_full->creator_user_id != new_creator_user_id) {
-        if (new_creator_user_id.is_valid() && chat_full->creator_user_id.is_valid()) {
-          LOG(ERROR) << "Group creator has changed from " << chat_full->creator_user_id << " to " << new_creator_user_id
-                     << " in " << chat_id;
-        }
         chat_full->creator_user_id = new_creator_user_id;
         chat_full->is_changed = true;
       }
