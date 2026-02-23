@@ -8734,8 +8734,8 @@ internalLinkTypeNewPrivateChat = InternalLinkType;
 //@description The link is a link to open the story posting interface @content_type The type of the content of the story to post; may be null if unspecified
 internalLinkTypeNewStory content_type:StoryContentType = InternalLinkType;
 
-//@description The link is an OAuth link. Call getOauthLinkInfo with the given URL to process the link, then show the user confirmation dialog and
-//-call either acceptOauthRequest or declineOauthRequest
+//@description The link is an OAuth link. Call getOauthLinkInfo with the given URL to process the link if the link was received from outside of the application; otherwise, ignore it.
+//-After getOauthLinkInfo, show the user confirmation dialog and call either acceptOauthRequest or declineOauthRequest
 //@url URL to be passed to getOauthLinkInfo
 internalLinkTypeOauth url:string = InternalLinkType;
 
