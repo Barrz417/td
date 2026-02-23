@@ -430,22 +430,26 @@ RestrictedRights DialogParticipantStatus::get_effective_restricted_rights() cons
                           can_create_topics(), can_edit_rank(), ChannelType::Unknown);
 }
 
-td_api::object_ptr<td_api::ChatMemberStatus> DialogParticipantStatus::get_chat_member_status_object() const {
+td_api::object_ptr<td_api::ChatMemberStatus> DialogParticipantStatus::get_chat_member_status_object(
+    string *rank) const {
+  if (rank != nullptr) {
+    *rank = rank_;
+  }
   switch (type_) {
     case Type::Creator:
-      return td_api::make_object<td_api::chatMemberStatusCreator>(rank_, is_anonymous(), is_member());
+      return td_api::make_object<td_api::chatMemberStatusCreator>(is_anonymous(), is_member());
     case Type::Administrator:
       return td_api::make_object<td_api::chatMemberStatusAdministrator>(
-          rank_, can_be_edited(), get_administrator_rights().get_chat_administrator_rights_object());
+          can_be_edited(), get_administrator_rights().get_chat_administrator_rights_object());
     case Type::Member:
-      return td_api::make_object<td_api::chatMemberStatusMember>(rank_, until_date_);
+      return td_api::make_object<td_api::chatMemberStatusMember>(until_date_);
     case Type::Restricted:
       return td_api::make_object<td_api::chatMemberStatusRestricted>(
-          rank_, is_member(), until_date_, get_restricted_rights().get_chat_permissions_object());
+          is_member(), until_date_, get_restricted_rights().get_chat_permissions_object());
     case Type::Left:
       return td_api::make_object<td_api::chatMemberStatusLeft>();
     case Type::Banned:
-      return td_api::make_object<td_api::chatMemberStatusBanned>(rank_, until_date_);
+      return td_api::make_object<td_api::chatMemberStatusBanned>(until_date_);
     default:
       UNREACHABLE();
       return nullptr;
@@ -603,48 +607,25 @@ DialogParticipantStatus get_dialog_participant_status(const td_api::object_ptr<t
   switch (constructor_id) {
     case td_api::chatMemberStatusCreator::ID: {
       auto st = static_cast<const td_api::chatMemberStatusCreator *>(status.get());
-      auto custom_title = st->custom_title_;
-      if (!clean_input_string(custom_title)) {
-        custom_title.clear();
-      }
-      return DialogParticipantStatus::Creator(st->is_member_, st->is_anonymous_, std::move(custom_title));
+      return DialogParticipantStatus::Creator(st->is_member_, st->is_anonymous_, string());
     }
     case td_api::chatMemberStatusAdministrator::ID: {
       auto st = static_cast<const td_api::chatMemberStatusAdministrator *>(status.get());
-      auto custom_title = st->custom_title_;
-      if (!clean_input_string(custom_title)) {
-        custom_title.clear();
-      }
-      return DialogParticipantStatus::Administrator(AdministratorRights(st->rights_, channel_type),
-                                                    std::move(custom_title), true /*st->can_be_edited_*/);
+      return DialogParticipantStatus::Administrator(AdministratorRights(st->rights_, channel_type), string(),
+                                                    true /*st->can_be_edited_*/);
     }
-    case td_api::chatMemberStatusMember::ID: {
-      auto st = static_cast<const td_api::chatMemberStatusMember *>(status.get());
-      auto tag = st->tag_;
-      if (!clean_input_string(tag)) {
-        tag.clear();
-      }
-      return DialogParticipantStatus::Member(0, std::move(tag));
-    }
+    case td_api::chatMemberStatusMember::ID:
+      return DialogParticipantStatus::Member(0, string());
     case td_api::chatMemberStatusRestricted::ID: {
       auto st = static_cast<const td_api::chatMemberStatusRestricted *>(status.get());
-      auto tag = st->tag_;
-      if (!clean_input_string(tag)) {
-        tag.clear();
-      }
       return DialogParticipantStatus::Restricted(RestrictedRights(st->permissions_, channel_type), st->is_member_,
-                                                 fix_until_date(st->restricted_until_date_), channel_type,
-                                                 std::move(tag));
+                                                 fix_until_date(st->restricted_until_date_), channel_type, string());
     }
     case td_api::chatMemberStatusLeft::ID:
       return DialogParticipantStatus::Left();
     case td_api::chatMemberStatusBanned::ID: {
       auto st = static_cast<const td_api::chatMemberStatusBanned *>(status.get());
-      auto tag = st->tag_;
-      if (!clean_input_string(tag)) {
-        tag.clear();
-      }
-      return DialogParticipantStatus::Banned(fix_until_date(st->banned_until_date_), std::move(tag));
+      return DialogParticipantStatus::Banned(fix_until_date(st->banned_until_date_), string());
     }
     default:
       UNREACHABLE();

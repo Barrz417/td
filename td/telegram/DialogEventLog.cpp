@@ -84,7 +84,7 @@ static td_api::object_ptr<td_api::ChatEventAction> get_chat_event_action_object(
       }
       return td_api::make_object<td_api::chatEventMemberInvited>(
           td->user_manager_->get_user_id_object(dialog_participant.dialog_id_.get_user_id(), "chatEventMemberInvited"),
-          dialog_participant.status_.get_chat_member_status_object());
+          dialog_participant.status_.get_chat_member_status_object(nullptr));
     }
     case telegram_api::channelAdminLogEventActionParticipantToggleBan::ID: {
       auto action =
@@ -102,8 +102,8 @@ static td_api::object_ptr<td_api::ChatEventAction> get_chat_event_action_object(
       }
       return td_api::make_object<td_api::chatEventMemberRestricted>(
           get_message_sender_object(td, old_dialog_participant.dialog_id_, "chatEventMemberRestricted"),
-          old_dialog_participant.status_.get_chat_member_status_object(),
-          new_dialog_participant.status_.get_chat_member_status_object());
+          old_dialog_participant.status_.get_chat_member_status_object(nullptr),
+          new_dialog_participant.status_.get_chat_member_status_object(nullptr));
     }
     case telegram_api::channelAdminLogEventActionParticipantToggleAdmin::ID: {
       auto action =
@@ -120,11 +120,14 @@ static td_api::object_ptr<td_api::ChatEventAction> get_chat_event_action_object(
         LOG(ERROR) << "Wrong edit administrator: " << old_dialog_participant << " -> " << new_dialog_participant;
         return nullptr;
       }
+      string old_rank;
+      string new_rank;
+      auto old_chat_member_status = old_dialog_participant.status_.get_chat_member_status_object(&old_rank);
+      auto new_chat_member_status = new_dialog_participant.status_.get_chat_member_status_object(&new_rank);
       return td_api::make_object<td_api::chatEventMemberPromoted>(
           td->user_manager_->get_user_id_object(old_dialog_participant.dialog_id_.get_user_id(),
                                                 "chatEventMemberPromoted"),
-          old_dialog_participant.status_.get_chat_member_status_object(),
-          new_dialog_participant.status_.get_chat_member_status_object());
+          std::move(old_chat_member_status), std::move(new_chat_member_status));
     }
     case telegram_api::channelAdminLogEventActionChangeTitle::ID: {
       auto action = telegram_api::move_object_as<telegram_api::channelAdminLogEventActionChangeTitle>(action_ptr);
@@ -510,8 +513,8 @@ static td_api::object_ptr<td_api::ChatEventAction> get_chat_event_action_object(
       return td_api::make_object<td_api::chatEventMemberSubscriptionExtended>(
           td->user_manager_->get_user_id_object(old_dialog_participant.dialog_id_.get_user_id(),
                                                 "chatEventMemberSubscriptionExtended"),
-          old_dialog_participant.status_.get_chat_member_status_object(),
-          new_dialog_participant.status_.get_chat_member_status_object());
+          old_dialog_participant.status_.get_chat_member_status_object(nullptr),
+          new_dialog_participant.status_.get_chat_member_status_object(nullptr));
     }
     case telegram_api::channelAdminLogEventActionToggleAutotranslation::ID: {
       auto action =

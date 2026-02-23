@@ -6298,10 +6298,12 @@ const vector<DialogParticipant> *ChatManager::get_chat_participants(ChatId chat_
 
 tl_object_ptr<td_api::chatMember> ChatManager::get_chat_member_object(const DialogParticipant &dialog_participant,
                                                                       const char *source) const {
+  string rank;
+  auto chat_member_status = dialog_participant.status_.get_chat_member_status_object(&rank);
   return td_api::make_object<td_api::chatMember>(
-      get_message_sender_object(td_, dialog_participant.dialog_id_, source),
+      get_message_sender_object(td_, dialog_participant.dialog_id_, source), rank,
       td_->user_manager_->get_user_id_object(dialog_participant.inviter_user_id_, "chatMember.inviter_user_id"),
-      dialog_participant.joined_date_, dialog_participant.status_.get_chat_member_status_object());
+      dialog_participant.joined_date_, std::move(chat_member_status));
 }
 
 bool ChatManager::on_get_channel_error(ChannelId channel_id, const Status &status, const char *source) {
@@ -9629,7 +9631,7 @@ td_api::object_ptr<td_api::updateBasicGroup> ChatManager::get_update_basic_group
 
 td_api::object_ptr<td_api::updateBasicGroup> ChatManager::get_update_unknown_basic_group_object(ChatId chat_id) {
   return td_api::make_object<td_api::updateBasicGroup>(td_api::make_object<td_api::basicGroup>(
-      chat_id.get(), 0, DialogParticipantStatus::Banned(0, string()).get_chat_member_status_object(), true, 0));
+      chat_id.get(), 0, DialogParticipantStatus::Banned(0, string()).get_chat_member_status_object(nullptr), true, 0));
 }
 
 int64 ChatManager::get_basic_group_id_object(ChatId chat_id, const char *source) const {
@@ -9657,7 +9659,7 @@ tl_object_ptr<td_api::basicGroup> ChatManager::get_basic_group_object(ChatId cha
 
 tl_object_ptr<td_api::basicGroup> ChatManager::get_basic_group_object_const(ChatId chat_id, const Chat *c) const {
   return make_tl_object<td_api::basicGroup>(
-      chat_id.get(), c->participant_count, get_chat_status(c).get_chat_member_status_object(), c->is_active,
+      chat_id.get(), c->participant_count, get_chat_status(c).get_chat_member_status_object(nullptr), c->is_active,
       get_supergroup_id_object(c->migrated_to_channel_id, "get_basic_group_object"));
 }
 
@@ -9694,8 +9696,8 @@ td_api::object_ptr<td_api::updateSupergroup> ChatManager::get_update_unknown_sup
   auto min_channel = get_min_channel(channel_id);
   bool is_megagroup = min_channel == nullptr ? false : min_channel->is_megagroup_;
   return td_api::make_object<td_api::updateSupergroup>(td_api::make_object<td_api::supergroup>(
-      channel_id.get(), nullptr, 0, DialogParticipantStatus::Banned(0, string()).get_chat_member_status_object(), 0, 0,
-      false, false, false, false, false, !is_megagroup, false, false, !is_megagroup, false, false, false, false,
+      channel_id.get(), nullptr, 0, DialogParticipantStatus::Banned(0, string()).get_chat_member_status_object(nullptr),
+      0, 0, false, false, false, false, false, !is_megagroup, false, false, !is_megagroup, false, false, false, false,
       nullptr, false, false, nullptr, 0, nullptr));
 }
 
@@ -9733,10 +9735,10 @@ td_api::object_ptr<td_api::supergroup> ChatManager::get_supergroup_object(Channe
   }
   return td_api::make_object<td_api::supergroup>(
       channel_id.get(), c->usernames.get_usernames_object(), c->date,
-      get_channel_status(c).get_chat_member_status_object(), c->participant_count, c->boost_level, c->autotranslation,
-      c->has_linked_channel, c->has_location, c->sign_messages, c->show_message_sender, get_channel_join_to_send(c),
-      get_channel_join_request(c), c->is_slow_mode_enabled, !c->is_megagroup, c->is_gigagroup, c->is_forum,
-      c->is_monoforum, c->is_admined_monoforum, get_channel_verification_status_object(c),
+      get_channel_status(c).get_chat_member_status_object(nullptr), c->participant_count, c->boost_level,
+      c->autotranslation, c->has_linked_channel, c->has_location, c->sign_messages, c->show_message_sender,
+      get_channel_join_to_send(c), get_channel_join_request(c), c->is_slow_mode_enabled, !c->is_megagroup,
+      c->is_gigagroup, c->is_forum, c->is_monoforum, c->is_admined_monoforum, get_channel_verification_status_object(c),
       c->broadcast_messages_allowed, c->is_forum_tabs, get_restriction_info_object(c->restriction_reasons),
       c->paid_message_star_count, get_channel_active_story_state(c).get_active_story_state_object());
 }

@@ -2220,9 +2220,9 @@ void DialogParticipantManager::ban_dialog_participant(DialogId dialog_id, Dialog
                                      std::move(promise));
     case DialogType::Channel:
       // must use td_api::chatMemberStatusBanned to properly fix banned_until_date
-      return set_channel_participant_status(
-          dialog_id.get_channel_id(), participant_dialog_id,
-          td_api::make_object<td_api::chatMemberStatusBanned>(string(), banned_until_date), std::move(promise));
+      return set_channel_participant_status(dialog_id.get_channel_id(), participant_dialog_id,
+                                            td_api::make_object<td_api::chatMemberStatusBanned>(banned_until_date),
+                                            std::move(promise));
     case DialogType::SecretChat:
       return promise.set_error(400, "Can't ban members in secret chats");
     case DialogType::None:

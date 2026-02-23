@@ -394,7 +394,7 @@ class DialogParticipantStatus {
 
   DialogParticipantStatus apply_restrictions(RestrictedRights default_restrictions, bool is_booster, bool is_bot) const;
 
-  td_api::object_ptr<td_api::ChatMemberStatus> get_chat_member_status_object() const;
+  td_api::object_ptr<td_api::ChatMemberStatus> get_chat_member_status_object(string *rank) const;
 
   telegram_api::object_ptr<telegram_api::chatAdminRights> get_chat_admin_rights() const;
 
