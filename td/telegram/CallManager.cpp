@@ -119,7 +119,8 @@ class SaveCallLogQuery final : public Td::ResultHandler {
   }
 
   void on_error(Status status) final {
-    promise_.set_error(std::move(status));
+    send_closure(G()->call_manager(), &CallManager::on_save_log, std::move(call_id_), file_upload_id_,
+                 std::move(status), std::move(promise_));
   }
 };
 
@@ -399,6 +400,7 @@ void CallManager::on_upload_log_file(CallId call_id, FileUploadId file_upload_id
                 promise = std::move(promise)](
                    Result<telegram_api::object_ptr<telegram_api::inputPhoneCall>> r_input_phone_call) mutable {
         if (r_input_phone_call.is_error()) {
+          send_closure(G()->file_manager(), &FileManager::delete_partial_remote_location, file_upload_id);
           return promise.set_error(r_input_phone_call.move_as_error());
         }
         send_closure(actor_id, &CallManager::do_send_call_log, std::move(call_id), r_input_phone_call.move_as_ok(),
