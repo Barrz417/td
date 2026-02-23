@@ -9089,7 +9089,10 @@ int64 UserManager::get_user_full_profile_photo_id(const UserFull *user_full) {
   if (!user_full->photo.is_empty()) {
     return user_full->photo.id.get();
   }
-  return user_full->fallback_photo.id.get();
+  if (!user_full->fallback_photo.is_empty()) {
+    return user_full->fallback_photo.id.get();
+  }
+  return 0;
 }
 
 void UserManager::drop_user_full_photos(UserFull *user_full, UserId user_id, int64 expected_photo_id,
