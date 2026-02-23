@@ -1699,9 +1699,9 @@ void DialogParticipantManager::get_channel_participant(ChannelId channel_id, Dia
     }
   }
 
-  if (td_->auth_manager_->is_bot() && participant_dialog_id == td_->dialog_manager_->get_my_dialog_id() &&
+  if (false && td_->auth_manager_->is_bot() && participant_dialog_id == td_->dialog_manager_->get_my_dialog_id() &&
       td_->chat_manager_->have_channel(channel_id)) {
-    // bots don't need inviter information
+    // bots don't need inviter information, but bots need member tag which isn't available in the channel status
     td_->chat_manager_->reload_channel(channel_id, Auto(), "get_channel_participant");
     return promise.set_value(DialogParticipant{participant_dialog_id, participant_dialog_id.get_user_id(),
                                                td_->chat_manager_->get_channel_date(channel_id),
