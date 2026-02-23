@@ -6158,12 +6158,13 @@ bool UserManager::delete_my_profile_photo_from_cache(int64 profile_photo_id) {
 
     // update Photo in UserFull
     if (user_full != nullptr) {
-      if (user_full->fallback_photo.id.get() == profile_photo_id) {
+      if (!user_full->fallback_photo.is_empty() && user_full->fallback_photo.id.get() == profile_photo_id) {
         LOG(INFO) << "Drop full public photo of " << user_id;
-        user_full->photo = Photo();
+        user_full->fallback_photo = Photo();
         user_full->is_changed = true;
       } else if (have_new_photo) {
-        if (user_full->photo.id.get() == profile_photo_id && user_photos->photos[0] != user_full->photo) {
+        if (!user_full->photo.is_empty() && user_full->photo.id.get() == profile_photo_id &&
+            user_photos->photos[0] != user_full->photo) {
           LOG(INFO) << "Update full photo of " << user_id << " to " << user_photos->photos[0];
           user_full->photo = user_photos->photos[0];
           user_full->is_changed = true;
@@ -6214,9 +6215,12 @@ void UserManager::delete_profile_photo(int64 profile_photo_id, bool is_recursive
     }
     profile_photo_id = user_full->photo.id.get();
   }
-  if (user_full->photo.id.get() == profile_photo_id || user_full->fallback_photo.id.get() == profile_photo_id) {
+  bool update_main_photo = !user_full->photo.is_empty() && user_full->photo.id.get() == profile_photo_id;
+  bool update_fallback_photo =
+      !user_full->fallback_photo.is_empty() && user_full->fallback_photo.id.get() == profile_photo_id;
+  if (update_main_photo || update_fallback_photo) {
     td_->create_handler<UpdateProfilePhotoQuery>(std::move(promise))
-        ->send(get_my_id(), FileId(), profile_photo_id, user_full->fallback_photo.id.get() == profile_photo_id,
+        ->send(get_my_id(), FileId(), profile_photo_id, update_fallback_photo,
                telegram_api::make_object<telegram_api::inputPhotoEmpty>());
     return;
   }
