@@ -73,10 +73,6 @@ class DialogParticipantManager final : public Actor {
   void process_dialog_join_requests(DialogId dialog_id, const string &invite_link, bool approve,
                                     Promise<Unit> &&promise);
 
-  void speculative_update_dialog_administrators(DialogId dialog_id, UserId user_id,
-                                                const DialogParticipantStatus &new_status,
-                                                const DialogParticipantStatus &old_status);
-
   void on_update_dialog_administrators(DialogId dialog_id, vector<DialogAdministrator> &&administrators,
                                        bool have_access, bool from_database);
 
@@ -265,6 +261,12 @@ class DialogParticipantManager final : public Actor {
 
   void speculative_add_channel_user(ChannelId channel_id, UserId user_id, const DialogParticipantStatus &new_status,
                                     const DialogParticipantStatus &old_status);
+
+  void speculative_update_dialog_administrators(DialogId dialog_id, UserId user_id,
+                                                const DialogParticipantStatus &new_status,
+                                                const DialogParticipantStatus &old_status);
+
+  void speculative_update_dialog_administrator_rank(DialogId dialog_id, UserId user_id, const string &new_rank);
 
   void update_channel_participant_status_cache(ChannelId channel_id, DialogId participant_dialog_id,
                                                DialogParticipantStatus &&dialog_participant_status);

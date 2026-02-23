@@ -1233,8 +1233,7 @@ void DialogParticipantManager::process_dialog_join_requests(DialogId dialog_id, 
 void DialogParticipantManager::speculative_update_dialog_administrators(DialogId dialog_id, UserId user_id,
                                                                         const DialogParticipantStatus &new_status,
                                                                         const DialogParticipantStatus &old_status) {
-  if (new_status.is_administrator_member() == old_status.is_administrator_member() &&
-      new_status.get_rank() == old_status.get_rank()) {
+  if (new_status.is_administrator_member() == old_status.is_administrator_member()) {
     return;
   }
   auto it = dialog_administrators_.find(dialog_id);
@@ -1247,16 +1246,15 @@ void DialogParticipantManager::speculative_update_dialog_administrators(DialogId
     for (auto &administrator : administrators) {
       if (administrator.get_user_id() == user_id) {
         is_found = true;
-        if (administrator.get_rank() != new_status.get_rank() ||
-            administrator.is_creator() != new_status.is_creator()) {
-          administrator = DialogAdministrator(user_id, new_status.get_rank(), new_status.is_creator());
+        if (administrator.is_creator() != new_status.is_creator()) {
+          administrator = DialogAdministrator(user_id, administrator.get_rank(), new_status.is_creator());
           on_update_dialog_administrators(dialog_id, std::move(administrators), true, false);
         }
         break;
       }
     }
     if (!is_found) {
-      administrators.emplace_back(user_id, new_status.get_rank(), new_status.is_creator());
+      administrators.emplace_back(user_id, string(), new_status.is_creator());
       on_update_dialog_administrators(dialog_id, std::move(administrators), true, false);
     }
   } else {
@@ -1267,6 +1265,24 @@ void DialogParticipantManager::speculative_update_dialog_administrators(DialogId
     if (i != administrators.size()) {
       administrators.erase(administrators.begin() + i);
       on_update_dialog_administrators(dialog_id, std::move(administrators), true, false);
+    }
+  }
+}
+
+void DialogParticipantManager::speculative_update_dialog_administrator_rank(DialogId dialog_id, UserId user_id,
+                                                                            const string &new_rank) {
+  auto it = dialog_administrators_.find(dialog_id);
+  if (it == dialog_administrators_.end()) {
+    return;
+  }
+  auto administrators = it->second;
+  for (auto &administrator : administrators) {
+    if (administrator.get_user_id() == user_id) {
+      if (administrator.get_rank() != new_rank) {
+        administrator.set_rank(new_rank);
+        on_update_dialog_administrators(dialog_id, std::move(administrators), true, false);
+      }
+      break;
     }
   }
 }
@@ -2193,6 +2209,7 @@ void DialogParticipantManager::set_dialog_participant_rank(DialogId dialog_id, U
       return promise.set_error(400, "Chat member tag can't be changed in private chats");
     case DialogType::Chat:
     case DialogType::Channel:
+      speculative_update_dialog_administrator_rank(dialog_id, user_id, rank);
       td_->create_handler<EditChatParticipantRankQuery>(std::move(promise))->send(dialog_id, user_id, rank);
       break;
     case DialogType::SecretChat:
