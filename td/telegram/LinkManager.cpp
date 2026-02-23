@@ -1682,11 +1682,14 @@ class RequestUrlOauthQuery final : public Td::ResultHandler {
       : promise_(std::move(promise)) {
   }
 
-  void send(string url) {
+  void send(string url, const string &in_app_origin) {
     url_ = std::move(url);
     int32 flags = telegram_api::messages_requestUrlAuth::URL_MASK;
-    send_query(
-        G()->net_query_creator().create(telegram_api::messages_requestUrlAuth(flags, nullptr, 0, 0, url_, string())));
+    if (!in_app_origin.empty()) {
+      flags |= telegram_api::messages_requestUrlAuth::IN_APP_ORIGIN_MASK;
+    }
+    send_query(G()->net_query_creator().create(
+        telegram_api::messages_requestUrlAuth(flags, nullptr, 0, 0, url_, in_app_origin)));
   }
 
   void on_result(BufferSlice packet) final {
@@ -4021,7 +4024,8 @@ void LinkManager::decline_oauth_request(const string &url, Promise<Unit> &&promi
   td_->create_handler<DeclineUrlAuthQuery>(std::move(promise))->send(url);
 }
 
-void LinkManager::get_oauth_link_info(string &&link, Promise<td_api::object_ptr<td_api::oauthLinkInfo>> &&promise) {
+void LinkManager::get_oauth_link_info(string &&link, const string &in_app_origin,
+                                      Promise<td_api::object_ptr<td_api::oauthLinkInfo>> &&promise) {
   auto parsed_link = parse_internal_link(link);
   if (parsed_link == nullptr) {
     return promise.set_error(400, "Invalid OAuth URL specified");
@@ -4031,7 +4035,7 @@ void LinkManager::get_oauth_link_info(string &&link, Promise<td_api::object_ptr<
     return promise.set_error(400, "Invalid OAuth URL specified");
   }
   link = std::move(static_cast<td_api::internalLinkTypeOauth &>(*parsed_object).url_);
-  td_->create_handler<RequestUrlOauthQuery>(std::move(promise))->send(link);
+  td_->create_handler<RequestUrlOauthQuery>(std::move(promise))->send(link, in_app_origin);
 }
 
 Result<string> LinkManager::get_background_url(const string &name,

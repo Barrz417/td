@@ -8033,8 +8033,10 @@ class CliClient final : public Actor {
       const string &link = args;
       send_request(td_api::make_object<td_api::getExternalLink>(link, op == "gelw"));
     } else if (op == "goli") {
-      const string &link = args;
-      send_request(td_api::make_object<td_api::getOauthLinkInfo>(link));
+      string link;
+      string in_app_origin;
+      get_args(args, link, in_app_origin);
+      send_request(td_api::make_object<td_api::getOauthLinkInfo>(link, in_app_origin));
     } else if (op == "aor" || op == "aorw" || op == "aorp") {
       string link;
       string match_code;

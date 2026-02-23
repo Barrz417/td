@@ -12067,7 +12067,8 @@ getExternalLink link:string allow_write_access:Bool = HttpUrl;
 
 //@description Returns information about an OAuth deep link. Use acceptOauthRequest or declineOauthRequest to process the link
 //@url URL of the link
-getOauthLinkInfo url:string = OauthLinkInfo;
+//@in_app_origin Origin of the OAuth request if the request was received from the in-app browser; pass an empty string otherwise
+getOauthLinkInfo url:string in_app_origin:string = OauthLinkInfo;
 
 //@description Accepts an OAuth authorization request. Returns an HTTP URL to open after successful authorization.
 //-May return an empty link if just a toast about successful login has to be shown

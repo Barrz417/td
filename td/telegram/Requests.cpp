@@ -3407,13 +3407,15 @@ void Requests::on_request(uint64 id, td_api::getExternalLink &request) {
 void Requests::on_request(uint64 id, td_api::getOauthLinkInfo &request) {
   CHECK_IS_USER();
   CLEAN_INPUT_STRING(request.url_);
+  CLEAN_INPUT_STRING(request.in_app_origin_);
   CREATE_REQUEST_PROMISE();
-  td_->link_manager_->get_oauth_link_info(std::move(request.url_), std::move(promise));
+  td_->link_manager_->get_oauth_link_info(std::move(request.url_), request.in_app_origin_, std::move(promise));
 }
 
 void Requests::on_request(uint64 id, td_api::acceptOauthRequest &request) {
   CHECK_IS_USER();
   CLEAN_INPUT_STRING(request.url_);
+  CLEAN_INPUT_STRING(request.match_code_);
   CREATE_REQUEST_PROMISE();
   td_->link_manager_->accept_oauth_request(request.url_, request.match_code_, request.allow_write_access_,
                                            request.allow_phone_number_access_, std::move(promise));
