@@ -465,6 +465,7 @@ bool OptionManager::is_internal_option(Slice name) {
                                                               "group_profile_bg_icon_level_min",
                                                               "group_transcribe_level_min",
                                                               "group_wallpaper_level_min",
+                                                              "has_protected_content_disable_request_duration",
                                                               "hidden_members_group_size_min",
                                                               "ignored_restriction_reasons",
                                                               "language_pack_version",
