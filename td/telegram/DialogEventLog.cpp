@@ -129,6 +129,11 @@ static td_api::object_ptr<td_api::ChatEventAction> get_chat_event_action_object(
         additional_action = td_api::make_object<td_api::chatEventMemberTagChanged>(
             td->user_manager_->get_user_id_object(user_id, "chatEventMemberTagChanged"), old_rank, new_rank);
       }
+      old_dialog_participant.status_.set_rank(string());
+      new_dialog_participant.status_.set_rank(string());
+      if (old_dialog_participant.status_ == new_dialog_participant.status_) {
+        return std::move(additional_action);
+      }
       return td_api::make_object<td_api::chatEventMemberPromoted>(
           td->user_manager_->get_user_id_object(user_id, "chatEventMemberPromoted"), std::move(old_chat_member_status),
           std::move(new_chat_member_status));
