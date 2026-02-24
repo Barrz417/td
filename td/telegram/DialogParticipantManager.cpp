@@ -2954,6 +2954,7 @@ void DialogParticipantManager::update_channel_participant_status_cache(
     return;
   }
   auto &participant_info = it->second;
+  dialog_participant_status.set_rank(string(participant_info.participant_.status_.get_rank()));
   LOG(INFO) << "Update cached status of " << participant_dialog_id << " in " << channel_id << " from "
             << participant_info.participant_.status_ << " to " << dialog_participant_status;
   participant_info.participant_.status_ = std::move(dialog_participant_status);
