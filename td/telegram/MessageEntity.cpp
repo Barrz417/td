@@ -3528,7 +3528,8 @@ Result<vector<MessageEntity>> parse_html(string &str) {
         } else if (tag_name == "tg-time") {
           TRY_RESULT(date_flags, get_date_flags(nested_entities.back().argument));
           if (nested_entities.back().date > 0) {
-            entities.emplace_back(entity_offset, entity_length, nested_entities.back().date, date_flags);
+            entities.emplace_back(MessageEntity::Type::FormattedDate, entity_offset, entity_length,
+                                  nested_entities.back().date, date_flags);
           }
         } else if (tag_name == "a") {
           auto url = std::move(nested_entities.back().argument);
@@ -3855,7 +3856,7 @@ Result<vector<MessageEntity>> get_message_entities(const UserManager *user_manag
               UNREACHABLE();
           }
         }
-        entities.emplace_back(offset, length, entity->unix_time_, date_flags);
+        entities.emplace_back(MessageEntity::Type::FormattedDate, offset, length, entity->unix_time_, date_flags);
         break;
       }
       default:
@@ -4022,7 +4023,7 @@ vector<MessageEntity> get_message_entities(const UserManager *user_manager,
             date_flags |= MessageEntity::DateFlags::DayOfWeek;
           }
         }
-        entities.emplace_back(entity->offset_, entity->length_, entity->date_, date_flags);
+        entities.emplace_back(MessageEntity::Type::FormattedDate, entity->offset_, entity->length_, entity->date_, date_flags);
         break;
       }
       default:
