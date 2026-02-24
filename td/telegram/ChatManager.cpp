@@ -8924,8 +8924,8 @@ void ChatManager::get_chat_participant(ChatId chat_id, UserId user_id, Promise<D
     return promise.set_error(400, "Group not found");
   }
 
-  if (td_->auth_manager_->is_bot() && user_id == td_->user_manager_->get_my_id()) {
-    // bots don't need inviter information
+  if (false && td_->auth_manager_->is_bot() && user_id == td_->user_manager_->get_my_id()) {
+    // bots don't need inviter information, but bots need member tag which isn't available in the channel status
     reload_chat(chat_id, Auto(), "get_chat_participant");
     return promise.set_value(DialogParticipant{DialogId(user_id), user_id, c->date, c->status});
   }
