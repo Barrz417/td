@@ -522,7 +522,16 @@ static td_api::object_ptr<td_api::ChatEventAction> get_chat_event_action_object(
       return td_api::make_object<td_api::chatEventAutomaticTranslationToggled>(action->new_value_);
     }
     case telegram_api::channelAdminLogEventActionParticipantEditRank::ID: {
-      return nullptr;
+      auto action =
+          telegram_api::move_object_as<telegram_api::channelAdminLogEventActionParticipantEditRank>(action_ptr);
+      UserId user_id(action->user_id_);
+      if (!user_id.is_valid() || action->prev_rank_ == action->new_rank_) {
+        LOG(ERROR) << "Receive " << to_string(action);
+        return nullptr;
+      }
+      return td_api::make_object<td_api::chatEventMemberTagChanged>(
+          td->user_manager_->get_user_id_object(user_id, "chatEventMemberTagChanged"), action->prev_rank_,
+          action->new_rank_);
     }
     default:
       UNREACHABLE();
