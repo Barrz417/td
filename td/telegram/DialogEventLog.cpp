@@ -42,7 +42,7 @@ namespace td {
 
 static td_api::object_ptr<td_api::ChatEventAction> get_chat_event_action_object(
     Td *td, ChannelId channel_id, tl_object_ptr<telegram_api::ChannelAdminLogEventAction> &&action_ptr,
-    DialogId &actor_dialog_id) {
+    DialogId &actor_dialog_id, td_api::object_ptr<td_api::ChatEventAction> &additional_action) {
   CHECK(action_ptr != nullptr);
   switch (action_ptr->get_id()) {
     case telegram_api::channelAdminLogEventActionParticipantJoin::ID:
@@ -120,14 +120,18 @@ static td_api::object_ptr<td_api::ChatEventAction> get_chat_event_action_object(
         LOG(ERROR) << "Wrong edit administrator: " << old_dialog_participant << " -> " << new_dialog_participant;
         return nullptr;
       }
+      auto user_id = old_dialog_participant.dialog_id_.get_user_id();
       string old_rank;
       string new_rank;
       auto old_chat_member_status = old_dialog_participant.status_.get_chat_member_status_object(&old_rank);
       auto new_chat_member_status = new_dialog_participant.status_.get_chat_member_status_object(&new_rank);
+      if (old_rank != new_rank) {
+        additional_action = td_api::make_object<td_api::chatEventMemberTagChanged>(
+            td->user_manager_->get_user_id_object(user_id, "chatEventMemberTagChanged"), old_rank, new_rank);
+      }
       return td_api::make_object<td_api::chatEventMemberPromoted>(
-          td->user_manager_->get_user_id_object(old_dialog_participant.dialog_id_.get_user_id(),
-                                                "chatEventMemberPromoted"),
-          std::move(old_chat_member_status), std::move(new_chat_member_status));
+          td->user_manager_->get_user_id_object(user_id, "chatEventMemberPromoted"), std::move(old_chat_member_status),
+          std::move(new_chat_member_status));
     }
     case telegram_api::channelAdminLogEventActionChangeTitle::ID: {
       auto action = telegram_api::move_object_as<telegram_api::channelAdminLogEventActionChangeTitle>(action_ptr);
@@ -596,7 +600,9 @@ class GetChannelAdminLogQuery final : public Td::ResultHandler {
       LOG_IF(ERROR, !td_->user_manager_->have_min_user(user_id)) << "Receive unknown " << user_id;
 
       DialogId actor_dialog_id;
-      auto action = get_chat_event_action_object(td_, channel_id_, std::move(event->action_), actor_dialog_id);
+      td_api::object_ptr<td_api::ChatEventAction> additional_action;
+      auto action =
+          get_chat_event_action_object(td_, channel_id_, std::move(event->action_), actor_dialog_id, additional_action);
       if (action == nullptr) {
         continue;
       }
@@ -613,6 +619,11 @@ class GetChannelAdminLogQuery final : public Td::ResultHandler {
       auto actor = get_message_sender_object_const(td_, user_id, actor_dialog_id, "GetChannelAdminLogQuery");
       result->events_.push_back(
           td_api::make_object<td_api::chatEvent>(event->id_, event->date_, std::move(actor), std::move(action)));
+      if (additional_action != nullptr) {
+        actor = get_message_sender_object_const(td_, user_id, actor_dialog_id, "GetChannelAdminLogQuery");
+        result->events_.push_back(td_api::make_object<td_api::chatEvent>(event->id_ - 1, event->date_, std::move(actor),
+                                                                         std::move(additional_action)));
+      }
     }
 
     promise_.set_value(std::move(result));
