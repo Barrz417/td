@@ -35,6 +35,36 @@
 
 namespace td {
 
+static Result<int32> get_date_flags(const string &date_format) {
+  if (date_format == "r" || date_format == "R") {
+    return MessageEntity::DateFlags::Relative;
+  }
+  int32 date_flags = 0;
+  for (auto c : date_format) {
+    switch (c) {
+      case 't':
+        date_flags |= MessageEntity::DateFlags::ShortTime;
+        break;
+      case 'T':
+        date_flags |= MessageEntity::DateFlags::LongTime;
+        break;
+      case 'd':
+        date_flags |= MessageEntity::DateFlags::ShortDate;
+        break;
+      case 'D':
+        date_flags |= MessageEntity::DateFlags::LongDate;
+        break;
+      case 'w':
+      case 'W':
+        date_flags |= MessageEntity::DateFlags::DayOfWeek;
+        break;
+      default:
+        return Status::Error(400, "Invalid date format used");
+    }
+  }
+  return std::move(date_flags);
+}
+
 int MessageEntity::get_type_priority(Type type) {
   static const int priorities[] = {50 /*Mention*/,
                                    50 /*Hashtag*/,
@@ -3292,12 +3322,14 @@ Result<vector<MessageEntity>> parse_html(string &str) {
   struct EntityInfo {
     string tag_name;
     string argument;
+    int32 date;
     int32 entity_offset;
     size_t entity_begin_pos;
 
-    EntityInfo(string &&tag_name, string &&argument, int32 entity_offset, size_t entity_begin_pos)
+    EntityInfo(string &&tag_name, string &&argument, int32 date, int32 entity_offset, size_t entity_begin_pos)
         : tag_name(std::move(tag_name))
         , argument(std::move(argument))
+        , date(std::move(date))
         , entity_offset(entity_offset)
         , entity_begin_pos(entity_begin_pos) {
     }
@@ -3341,13 +3373,14 @@ Result<vector<MessageEntity>> parse_html(string &str) {
       string tag_name = to_lower(Slice(text + begin_pos + 1, i - begin_pos - 1));
       if (tag_name != "a" && tag_name != "b" && tag_name != "strong" && tag_name != "i" && tag_name != "em" &&
           tag_name != "s" && tag_name != "strike" && tag_name != "del" && tag_name != "u" && tag_name != "ins" &&
-          tag_name != "tg-spoiler" && tag_name != "tg-emoji" && tag_name != "span" && tag_name != "pre" &&
-          tag_name != "code" && tag_name != "blockquote") {
+          tag_name != "tg-spoiler" && tag_name != "tg-emoji" && tag_name != "tg-time" && tag_name != "span" &&
+          tag_name != "pre" && tag_name != "code" && tag_name != "blockquote") {
         return Status::Error(400, PSLICE()
                                       << "Unsupported start tag \"" << tag_name << "\" at byte offset " << begin_pos);
       }
 
       string argument;
+      int32 date = 0;
       while (text[i] != '>') {
         while (text[i] != 0 && is_space(text[i])) {
           i++;
@@ -3435,6 +3468,10 @@ Result<vector<MessageEntity>> parse_html(string &str) {
           argument = std::move(attribute_value);
         } else if (tag_name == "blockquote" && attribute_name == Slice("expandable")) {
           argument = "1";
+        } else if (tag_name == "tg-time" && attribute_name == Slice("unix")) {
+          date = to_integer<int32>(attribute_value);
+        } else if (tag_name == "tg-time" && attribute_name == Slice("format")) {
+          argument = std::move(attribute_value);
         }
       }
 
@@ -3443,7 +3480,8 @@ Result<vector<MessageEntity>> parse_html(string &str) {
                                       << "Tag \"span\" must have class \"tg-spoiler\" at byte offset " << begin_pos);
       }
 
-      nested_entities.emplace_back(std::move(tag_name), std::move(argument), utf16_offset, result_end - result_begin);
+      nested_entities.emplace_back(std::move(tag_name), std::move(argument), date, utf16_offset,
+                                   result_end - result_begin);
     } else {
       // end of an entity
       if (nested_entities.empty()) {
@@ -3487,6 +3525,11 @@ Result<vector<MessageEntity>> parse_html(string &str) {
           }
           entities.emplace_back(MessageEntity::Type::CustomEmoji, entity_offset, entity_length,
                                 CustomEmojiId(r_document_id.ok()));
+        } else if (tag_name == "tg-time") {
+          TRY_RESULT(date_flags, get_date_flags(nested_entities.back().argument));
+          if (nested_entities.back().date > 0) {
+            entities.emplace_back(entity_offset, entity_length, nested_entities.back().date, date_flags);
+          }
         } else if (tag_name == "a") {
           auto url = std::move(nested_entities.back().argument);
           if (url.empty()) {

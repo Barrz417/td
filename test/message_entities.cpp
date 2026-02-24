@@ -1381,6 +1381,24 @@ TEST(MessageEntities, parse_html) {
   check_parse_html("🏟 🏟<b aba   =   caba><tg-emoji emoji-id=\"1\">🏟</tg-emoji>1</b>", "🏟 🏟🏟1",
                    {{td::MessageEntity::Type::Bold, 5, 3},
                     {td::MessageEntity::Type::CustomEmoji, 5, 2, td::CustomEmojiId(static_cast<td::int64>(1))}});
+  check_parse_html("➡️ ➡️<tg-time unix = \"12345\", format = \"r\">➡️ ➡️</tg-time><b>➡️ ➡️</b>", "➡️ ➡️➡️ ➡️➡️ ➡️",
+                   {{5, 5, 12345, 1}, {td::MessageEntity::Type::Bold, 10, 5}});
+  check_parse_html("➡️ ➡️<tg-time unix = \"12345\", format = \"t\">➡️ ➡️</tg-time><b>➡️ ➡️</b>", "➡️ ➡️➡️ ➡️➡️ ➡️",
+                   {{5, 5, 12345, 2}, {td::MessageEntity::Type::Bold, 10, 5}});
+  check_parse_html("➡️ ➡️<tg-time unix = \"12345\", format = \"T\">➡️ ➡️</tg-time><b>➡️ ➡️</b>", "➡️ ➡️➡️ ➡️➡️ ➡️",
+                   {{5, 5, 12345, 4}, {td::MessageEntity::Type::Bold, 10, 5}});
+  check_parse_html("➡️ ➡️<tg-time unix = \"12345\", format = \"d\">➡️ ➡️</tg-time><b>➡️ ➡️</b>", "➡️ ➡️➡️ ➡️➡️ ➡️",
+                   {{5, 5, 12345, 8}, {td::MessageEntity::Type::Bold, 10, 5}});
+  check_parse_html("➡️ ➡️<tg-time unix = \"12345\", format = \"D\">➡️ ➡️</tg-time><b>➡️ ➡️</b>", "➡️ ➡️➡️ ➡️➡️ ➡️",
+                   {{5, 5, 12345, 16}, {td::MessageEntity::Type::Bold, 10, 5}});
+  check_parse_html("➡️ ➡️<tg-time unix = \"12345\", format = \"w\">➡️ ➡️</tg-time><b>➡️ ➡️</b>", "➡️ ➡️➡️ ➡️➡️ ➡️",
+                   {{5, 5, 12345, 32}, {td::MessageEntity::Type::Bold, 10, 5}});
+  check_parse_html("➡️ ➡️<tg-time unix = \"12345\", format = \"W\">➡️ ➡️</tg-time><b>➡️ ➡️</b>", "➡️ ➡️➡️ ➡️➡️ ➡️",
+                   {{5, 5, 12345, 32}, {td::MessageEntity::Type::Bold, 10, 5}});
+  check_parse_html("➡️ ➡️<tg-time unix = \"12345\", format = \"tttTTdDwW\">➡️ ➡️</tg-time><b>➡️ ➡️</b>", "➡️ ➡️➡️ ➡️➡️ ➡️",
+                   {{5, 5, 12345, 62}, {td::MessageEntity::Type::Bold, 10, 5}});
+  check_parse_html("➡️ ➡️<tg-time unix = \"12345\", format = \"rt\">➡️ ➡️</tg-time><b>➡️ ➡️</b>", "Invalid date format used");
+  check_parse_html("➡️ ➡️<tg-time unix = \"12345\", format = \"ts\">➡️ ➡️</tg-time><b>➡️ ➡️</b>", "Invalid date format used");
   check_parse_html("<blockquote   cite=\"\" askdlbas nasjdbaj nj12b3>a&lt;<pre  >b;</></>", "a<b;",
                    {{td::MessageEntity::Type::BlockQuote, 0, 4}, {td::MessageEntity::Type::Pre, 2, 2}});
   check_parse_html("<blockquote   expandable>a&lt;<pre  >b;</></>", "a<b;",
