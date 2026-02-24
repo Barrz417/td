@@ -650,7 +650,8 @@ static telegram_api::object_ptr<telegram_api::channelAdminLogEventsFilter> get_i
       filters->member_restrictions_, filters->member_restrictions_, filters->member_restrictions_,
       filters->member_promotions_, filters->member_promotions_, filters->info_changes_, filters->setting_changes_,
       filters->message_pins_, filters->message_edits_, filters->message_deletions_, filters->video_chat_changes_,
-      filters->invite_link_changes_, false /*send*/, filters->forum_changes_, filters->subscription_extensions_, false);
+      filters->invite_link_changes_, false /*send*/, filters->forum_changes_, filters->subscription_extensions_,
+      filters->member_tag_changes_);
 }
 
 void get_dialog_event_log(Td *td, DialogId dialog_id, const string &query, int64 from_event_id, int32 limit,

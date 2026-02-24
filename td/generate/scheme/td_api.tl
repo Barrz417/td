@@ -7183,13 +7183,14 @@ chatEvents events:vector<chatEvent> = ChatEvents;
 //@member_invites True, if invited member events need to be returned
 //@member_promotions True, if member promotion/demotion events need to be returned
 //@member_restrictions True, if member restricted/unrestricted/banned/unbanned events need to be returned
+//@member_tag_changes True, if member tag and custom title change events need to be returned
 //@info_changes True, if changes in chat information need to be returned
 //@setting_changes True, if changes in chat settings need to be returned
 //@invite_link_changes True, if changes to invite links need to be returned
 //@video_chat_changes True, if video chat actions need to be returned
 //@forum_changes True, if forum-related actions need to be returned
 //@subscription_extensions True, if subscription extensions need to be returned
-chatEventLogFilters message_edits:Bool message_deletions:Bool message_pins:Bool member_joins:Bool member_leaves:Bool member_invites:Bool member_promotions:Bool member_restrictions:Bool info_changes:Bool setting_changes:Bool invite_link_changes:Bool video_chat_changes:Bool forum_changes:Bool subscription_extensions:Bool = ChatEventLogFilters;
+chatEventLogFilters message_edits:Bool message_deletions:Bool message_pins:Bool member_joins:Bool member_leaves:Bool member_invites:Bool member_promotions:Bool member_restrictions:Bool member_tag_changes:Bool info_changes:Bool setting_changes:Bool invite_link_changes:Bool video_chat_changes:Bool forum_changes:Bool subscription_extensions:Bool = ChatEventLogFilters;
 
 
 //@class LanguagePackStringValue @description Represents the value of a string in a language pack
