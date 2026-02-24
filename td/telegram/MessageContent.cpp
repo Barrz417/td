@@ -10883,7 +10883,9 @@ td_api::object_ptr<td_api::MessageContent> get_message_content_object(
     }
     case MessageContentType::NoForwardsRequest: {
       const auto *m = static_cast<const MessageNoForwardsRequest *>(content);
-      return td_api::make_object<td_api::messageChatHasProtectedContentDisableRequested>(m->is_expired);
+      auto duration = td->option_manager_->get_option_integer("has_protected_content_disable_request_duration");
+      bool is_expired = m->is_expired || G()->unix_time() >= message_date + duration;
+      return td_api::make_object<td_api::messageChatHasProtectedContentDisableRequested>(is_expired);
     }
     default:
       UNREACHABLE();
