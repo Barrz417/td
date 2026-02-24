@@ -189,32 +189,32 @@ tl_object_ptr<td_api::TextEntityType> MessageEntity::get_text_entity_type_object
     case MessageEntity::Type::ExpandableBlockQuote:
       return make_tl_object<td_api::textEntityTypeExpandableBlockQuote>();
     case MessageEntity::Type::FormattedDate: {
-      td_api::object_ptr<td_api::DateFormattingType> formatting_type;
+      td_api::object_ptr<td_api::DateTimeFormattingType> formatting_type;
       if ((date_flags & DateFlags::Relative) != 0) {
-        formatting_type = td_api::make_object<td_api::dateFormattingTypeRelative>();
+        formatting_type = td_api::make_object<td_api::dateTimeFormattingTypeRelative>();
       } else if (date_flags != 0) {
-        td_api::object_ptr<td_api::DatePartPrecision> time_precision;
+        td_api::object_ptr<td_api::DateTimePartPrecision> time_precision;
         if ((date_flags & DateFlags::ShortTime) != 0) {
-          time_precision = td_api::make_object<td_api::datePartPrecisionShort>();
+          time_precision = td_api::make_object<td_api::dateTimePartPrecisionShort>();
         } else if ((date_flags & DateFlags::LongTime) != 0) {
-          time_precision = td_api::make_object<td_api::datePartPrecisionLong>();
+          time_precision = td_api::make_object<td_api::dateTimePartPrecisionLong>();
         } else {
-          time_precision = td_api::make_object<td_api::datePartPrecisionNone>();
+          time_precision = td_api::make_object<td_api::dateTimePartPrecisionNone>();
         }
 
-        td_api::object_ptr<td_api::DatePartPrecision> day_precision;
+        td_api::object_ptr<td_api::DateTimePartPrecision> date_precision;
         if ((date_flags & DateFlags::ShortDate) != 0) {
-          day_precision = td_api::make_object<td_api::datePartPrecisionShort>();
+          date_precision = td_api::make_object<td_api::dateTimePartPrecisionShort>();
         } else if ((date_flags & DateFlags::LongDate) != 0) {
-          day_precision = td_api::make_object<td_api::datePartPrecisionLong>();
+          date_precision = td_api::make_object<td_api::dateTimePartPrecisionLong>();
         } else {
-          day_precision = td_api::make_object<td_api::datePartPrecisionNone>();
+          date_precision = td_api::make_object<td_api::dateTimePartPrecisionNone>();
         }
         auto show_day_of_week = (date_flags & DateFlags::DayOfWeek) != 0;
-        formatting_type = td_api::make_object<td_api::dateFormattingTypeAbsolute>(
-            std::move(time_precision), std::move(day_precision), show_day_of_week);
+        formatting_type = td_api::make_object<td_api::dateTimeFormattingTypeAbsolute>(
+            std::move(time_precision), std::move(date_precision), show_day_of_week);
       }
-      return make_tl_object<td_api::textEntityTypeDate>(date, std::move(formatting_type));
+      return make_tl_object<td_api::textEntityTypeDateTime>(date, std::move(formatting_type));
     }
     default:
       UNREACHABLE();
@@ -3762,41 +3762,41 @@ Result<vector<MessageEntity>> get_message_entities(const UserManager *user_manag
       case td_api::textEntityTypeExpandableBlockQuote::ID:
         entities.emplace_back(MessageEntity::Type::ExpandableBlockQuote, offset, length);
         break;
-      case td_api::textEntityTypeDate::ID: {
-        auto entity = static_cast<const td_api::textEntityTypeDate *>(input_entity->type_.get());
-        if (entity->date_ <= 0) {
+      case td_api::textEntityTypeDateTime::ID: {
+        auto entity = static_cast<const td_api::textEntityTypeDateTime *>(input_entity->type_.get());
+        if (entity->unix_time_ <= 0) {
           return Status::Error(400, "Invalid date specified");
         }
         int32 date_flags = 0;
         if (entity->formatting_type_ != nullptr) {
           switch (entity->formatting_type_->get_id()) {
-            case td_api::dateFormattingTypeRelative::ID:
+            case td_api::dateTimeFormattingTypeRelative::ID:
               date_flags = MessageEntity::DateFlags::Relative;
               break;
-            case td_api::dateFormattingTypeAbsolute::ID: {
-              auto type = static_cast<const td_api::dateFormattingTypeAbsolute *>(entity->formatting_type_.get());
+            case td_api::dateTimeFormattingTypeAbsolute::ID: {
+              auto type = static_cast<const td_api::dateTimeFormattingTypeAbsolute *>(entity->formatting_type_.get());
               if (type->time_precision_ != nullptr) {
                 switch (type->time_precision_->get_id()) {
-                  case td_api::datePartPrecisionNone::ID:
+                  case td_api::dateTimePartPrecisionNone::ID:
                     break;
-                  case td_api::datePartPrecisionShort::ID:
+                  case td_api::dateTimePartPrecisionShort::ID:
                     date_flags |= MessageEntity::DateFlags::ShortTime;
                     break;
-                  case td_api::datePartPrecisionLong::ID:
+                  case td_api::dateTimePartPrecisionLong::ID:
                     date_flags |= MessageEntity::DateFlags::LongTime;
                     break;
                   default:
                     UNREACHABLE();
                 }
               }
-              if (type->day_precision_ != nullptr) {
-                switch (type->day_precision_->get_id()) {
-                  case td_api::datePartPrecisionNone::ID:
+              if (type->date_precision_ != nullptr) {
+                switch (type->date_precision_->get_id()) {
+                  case td_api::dateTimePartPrecisionNone::ID:
                     break;
-                  case td_api::datePartPrecisionShort::ID:
+                  case td_api::dateTimePartPrecisionShort::ID:
                     date_flags |= MessageEntity::DateFlags::ShortDate;
                     break;
-                  case td_api::datePartPrecisionLong::ID:
+                  case td_api::dateTimePartPrecisionLong::ID:
                     date_flags |= MessageEntity::DateFlags::LongDate;
                     break;
                   default:
@@ -3812,7 +3812,7 @@ Result<vector<MessageEntity>> get_message_entities(const UserManager *user_manag
               UNREACHABLE();
           }
         }
-        entities.emplace_back(offset, length, entity->date_, date_flags);
+        entities.emplace_back(offset, length, entity->unix_time_, date_flags);
         break;
       }
       default:

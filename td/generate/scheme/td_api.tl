@@ -5159,28 +5159,28 @@ messageProximityAlertTriggered traveler_id:MessageSender watcher_id:MessageSende
 messageUnsupported = MessageContent;
 
 
-//@class DatePartPrecision @description Describes precision with which to show a date part
+//@class DateTimePartPrecision @description Describes precision with which to show a date or a time
 
-//@description Don't show the date part
-datePartPrecisionNone = DatePartPrecision;
+//@description Don't show the date or time
+dateTimePartPrecisionNone = DateTimePartPrecision;
 
-//@description Show the date part in a short way (22:45 or 17.03.22)
-datePartPrecisionShort = DatePartPrecision;
+//@description Show the date or time in a short way (17.03.22 or 22:45)
+dateTimePartPrecisionShort = DateTimePartPrecision;
 
-//@description Show the date part in a long way (22:45:00 or March 17, 2022)
-datePartPrecisionLong = DatePartPrecision;
+//@description Show the date or time in a long way (March 17, 2022 or 22:45:00)
+dateTimePartPrecisionLong = DateTimePartPrecision;
 
 
-//@class DateFormattingType @description Describes date formatting
+//@class DateTimeFormattingType @description Describes date and time formatting
 
-//@description The date must be shown relative to the current time ([in ] X seconds, minutes, hours, days, months, years [ago])
-dateFormattingTypeRelative = DateFormattingType;
+//@description The time must be shown relative to the current time ([in ] X seconds, minutes, hours, days, months, years [ago])
+dateTimeFormattingTypeRelative = DateTimeFormattingType;
 
-//@description The date must be shown as absolute time
+//@description The date and time must be shown as absolute timestamps
 //@time_precision The precision with which hours, minutes and seconds are shown
-//@day_precision The precision with which the day is shown
+//@date_precision The precision with which the day is shown
 //@show_day_of_week True, if the day of week should be shown
-dateFormattingTypeAbsolute time_precision:DatePartPrecision day_precision:DatePartPrecision show_day_of_week:Bool = DateFormattingType;
+dateTimeFormattingTypeAbsolute time_precision:DateTimePartPrecision date_precision:DateTimePartPrecision show_day_of_week:Bool = DateTimeFormattingType;
 
 
 //@class TextEntityType @description Represents a part of the text which must be formatted differently
@@ -5251,8 +5251,8 @@ textEntityTypeCustomEmoji custom_emoji_id:int64 = TextEntityType;
 //@description A media timestamp @media_timestamp Timestamp from which a video/audio/video note/voice note/story playing must start, in seconds. The media can be in the content or the link preview of the current message, or in the same places in the replied message
 textEntityTypeMediaTimestamp media_timestamp:int32 = TextEntityType;
 
-//@description A date @date Point in time (Unix timestamp) to which the date points @formatting_type Date formatting type; may be null if none and the original text must not be changed
-textEntityTypeDate date:int32 formatting_type:DateFormattingType = TextEntityType;
+//@description A data and time @unix_time Point in time (Unix timestamp) representing the data and time @formatting_type Date and time formatting type; may be null if none and the original text must not be changed
+textEntityTypeDateTime unix_time:int32 formatting_type:DateTimeFormattingType = TextEntityType;
 
 
 //@description A thumbnail to be sent along with a file; must be in JPEG or WEBP format for stickers, and less than 200 KB in size
