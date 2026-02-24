@@ -544,6 +544,10 @@ class UserManager final : public Actor {
 
   FileSourceId get_user_full_file_source_id(UserId user_id);
 
+  void register_noforwards_request(MessageFullId message_full_id, int32 message_date);
+
+  void unregister_noforwards_request(MessageFullId message_full_id);
+
   void get_web_app_placeholder(UserId user_id, Promise<td_api::object_ptr<td_api::outline>> &&promise);
 
   bool have_secret_chat(SecretChatId secret_chat_id) const;
@@ -868,6 +872,10 @@ class UserManager final : public Actor {
   static void on_user_rating_timeout_callback(void *user_manager_ptr, int64 user_id_long);
 
   void on_user_rating_timeout(UserId user_id);
+
+  static void on_noforwards_request_timeout_callback(void *user_manager_ptr, int64 request_id_long);
+
+  void on_noforwards_request_timeout(int32 request_id);
 
   void set_my_id(UserId my_id);
 
@@ -1206,6 +1214,7 @@ class UserManager final : public Actor {
   UserId support_user_id_;
   int32 my_was_online_local_ = 0;
   double next_set_my_active_users_ = 0.0;
+  int32 current_noforwards_request_id_ = 0;
 
   WaitFreeHashMap<UserId, unique_ptr<User>, UserIdHash> users_;
   WaitFreeHashMap<UserId, unique_ptr<UserFull>, UserIdHash> users_full_;
@@ -1324,6 +1333,9 @@ class UserManager final : public Actor {
 
   FlatHashMap<UserId, int64, UserIdHash> user_full_contact_price_;  // -1 - premium required
 
+  FlatHashMap<MessageFullId, int32, MessageFullIdHash> noforwards_request_ids_;
+  FlatHashMap<int32, MessageFullId> noforwards_request_message_ids_;
+
   WaitFreeHashSet<UserId, UserIdHash> restricted_user_ids_;
 
   int32 freeze_since_date_ = 0;
@@ -1348,6 +1360,7 @@ class UserManager final : public Actor {
   MultiTimeout user_online_timeout_{"UserOnlineTimeout"};
   MultiTimeout user_emoji_status_timeout_{"UserEmojiStatusTimeout"};
   MultiTimeout user_rating_timeout_{"UserRatingTimeout"};
+  MultiTimeout noforwards_request_timeout_{"NoforwardsRequestTimeout"};
 };
 
 }  // namespace td

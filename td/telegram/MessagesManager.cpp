@@ -5050,7 +5050,7 @@ bool MessagesManager::need_skip_bot_commands(DialogId dialog_id, const Message *
 }
 
 void MessagesManager::on_external_update_message_content(MessageFullId message_full_id, const char *source,
-                                                         bool expect_no_message) {
+                                                         bool expect_no_message, bool need_reregister) {
   Dialog *d = get_dialog(message_full_id.get_dialog_id());
   CHECK(d != nullptr);
   Message *m = get_message(d, message_full_id.get_message_id());
@@ -5062,6 +5062,10 @@ void MessagesManager::on_external_update_message_content(MessageFullId message_f
   // must not call on_message_changed, because the message itself wasn't changed
   send_update_last_message_if_needed(d, m, source);
   on_message_notification_changed(d, m, source);
+  if (need_reregister) {
+    reregister_message_content(td_, m->content.get(), m->content.get(), message_full_id, m->date,
+                               "on_external_update_message_content");
+  }
 }
 
 void MessagesManager::on_update_message_content(MessageFullId message_full_id) {
@@ -9878,7 +9882,7 @@ void MessagesManager::on_message_ttl_expired(Dialog *d, Message *m) {
   unregister_message_content(td_, m->content.get(), {d->dialog_id, m->message_id}, "on_message_ttl_expired");
   remove_message_file_sources(d->dialog_id, m, "on_message_ttl_expired");
   on_message_ttl_expired_impl(d, m, true);
-  register_message_content(td_, m->content.get(), {d->dialog_id, m->message_id}, "on_message_ttl_expired");
+  register_message_content(td_, m->content.get(), {d->dialog_id, m->message_id}, m->date, "on_message_ttl_expired");
   send_update_message_content(d, m, true, "on_message_ttl_expired");
   // the caller must call on_message_changed
 }
@@ -12105,7 +12109,7 @@ void MessagesManager::on_update_sent_text_message(int64 random_id,
   compare_message_contents(td_, m->content.get(), new_content.get(), is_content_changed, need_update);
 
   if (is_content_changed || need_update) {
-    reregister_message_content(td_, m->content.get(), new_content.get(), message_full_id,
+    reregister_message_content(td_, m->content.get(), new_content.get(), message_full_id, m->date,
                                "on_update_sent_text_message");
     m->content = std::move(new_content);
     m->is_content_secret = m->ttl.is_secret_message_content(MessageContentType::Text);
@@ -12128,7 +12132,7 @@ void MessagesManager::delete_pending_message_web_page(MessageFullId message_full
   CHECK(has_message_content_web_page(content));
   unregister_message_content(td_, content, message_full_id, "delete_pending_message_web_page");
   remove_message_content_web_page(content);
-  register_message_content(td_, content, message_full_id, "delete_pending_message_web_page");
+  register_message_content(td_, content, message_full_id, m->date, "delete_pending_message_web_page");
 
   // don't need to send an updateMessageContent, because the web page was pending
 
@@ -30509,7 +30513,7 @@ MessagesManager::Message *MessagesManager::add_message_to_dialog(Dialog *d, uniq
 
   add_message_file_sources(dialog_id, m, "add_message_to_dialog");
 
-  register_message_content(td_, m->content.get(), {dialog_id, m->message_id}, "add_message_to_dialog");
+  register_message_content(td_, m->content.get(), {dialog_id, m->message_id}, m->date, "add_message_to_dialog");
 
   register_message_reply(dialog_id, m);
 
@@ -30759,7 +30763,8 @@ MessagesManager::Message *MessagesManager::add_scheduled_message_to_dialog(Dialo
 
   add_message_file_sources(dialog_id, m, "add_scheduled_message_to_dialog");
 
-  register_message_content(td_, m->content.get(), {dialog_id, m->message_id}, "add_scheduled_message_to_dialog");
+  register_message_content(td_, m->content.get(), {dialog_id, m->message_id}, m->date,
+                           "add_scheduled_message_to_dialog");
 
   if (m->message_id.is_yet_unsent()) {
     add_random_id_to_message_id_correspondence(d, m->random_id, m->message_id);
@@ -31859,7 +31864,7 @@ bool MessagesManager::update_message_content(DialogId dialog_id, Message *old_me
   if (is_content_changed || need_update) {
     if (is_message_in_dialog) {
       reregister_message_content(td_, old_content.get(), new_content.get(), {dialog_id, old_message->message_id},
-                                 "update_message_content");
+                                 old_message->date, "update_message_content");
     }
     old_content = std::move(new_content);
     old_message->last_edit_pts = 0;

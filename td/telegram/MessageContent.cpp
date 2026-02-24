@@ -7981,7 +7981,7 @@ static bool need_register_message_content_for_bots(MessageContentType content_ty
   return content_type == MessageContentType::Poll;
 }
 
-void register_message_content(Td *td, const MessageContent *content, MessageFullId message_full_id,
+void register_message_content(Td *td, const MessageContent *content, MessageFullId message_full_id, int32 message_date,
                               const char *source) {
   auto content_type = content->get_type();
   if (td->auth_manager_->is_bot() && !need_register_message_content_for_bots(content_type)) {
@@ -8064,13 +8064,20 @@ void register_message_content(Td *td, const MessageContent *content, MessageFull
       td->star_gift_manager_->on_get_star_gift(star_gift->star_gift, false);
       return td->star_gift_manager_->register_gift(message_full_id, source);
     }
+    case MessageContentType::NoForwardsRequest: {
+      auto m = static_cast<const MessageNoForwardsRequest *>(content);
+      if (!m->is_expired) {
+        td->user_manager_->register_noforwards_request(message_full_id, message_date);
+      }
+      return;
+    }
     default:
       return;
   }
 }
 
 void reregister_message_content(Td *td, const MessageContent *old_content, const MessageContent *new_content,
-                                MessageFullId message_full_id, const char *source) {
+                                MessageFullId message_full_id, int32 message_date, const char *source) {
   auto old_content_type = old_content->get_type();
   auto new_content_type = new_content->get_type();
   if (old_content_type == new_content_type) {
@@ -8158,12 +8165,15 @@ void reregister_message_content(Td *td, const MessageContent *old_content, const
           return;
         }
         break;
+      case MessageContentType::NoForwardsRequest:
+        // always need to reregister the message because it depends on the current date
+        break;
       default:
         return;
     }
   }
   unregister_message_content(td, old_content, message_full_id, source);
-  register_message_content(td, new_content, message_full_id, source);
+  register_message_content(td, new_content, message_full_id, message_date, source);
 }
 
 void unregister_message_content(Td *td, const MessageContent *content, MessageFullId message_full_id,
@@ -8234,6 +8244,13 @@ void unregister_message_content(Td *td, const MessageContent *content, MessageFu
       return td->star_gift_manager_->unregister_gift(message_full_id, source);
     case MessageContentType::StarGiftPurchaseOfferDeclined:
       return td->star_gift_manager_->unregister_gift(message_full_id, source);
+    case MessageContentType::NoForwardsRequest: {
+      auto m = static_cast<const MessageNoForwardsRequest *>(content);
+      if (!m->is_expired) {
+        td->user_manager_->unregister_noforwards_request(message_full_id);
+      }
+      return;
+    }
     default:
       return;
   }

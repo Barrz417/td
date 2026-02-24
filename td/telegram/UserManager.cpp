@@ -2698,6 +2698,9 @@ UserManager::UserManager(Td *td, ActorShared<> parent) : td_(td), parent_(std::m
   user_rating_timeout_.set_callback(on_user_rating_timeout_callback);
   user_rating_timeout_.set_callback_data(static_cast<void *>(this));
 
+  noforwards_request_timeout_.set_callback(on_noforwards_request_timeout_callback);
+  noforwards_request_timeout_.set_callback_data(static_cast<void *>(this));
+
   get_user_queries_.set_merge_function([this](vector<int64> query_ids, Promise<Unit> &&promise) {
     TRY_STATUS_PROMISE(promise, G()->close_status());
     auto input_users = transform(query_ids, [this](int64 query_id) { return get_input_user_force(UserId(query_id)); });
@@ -2823,6 +2826,31 @@ void UserManager::on_user_rating_timeout(UserId user_id) {
   }
 
   update_user_full(user_full, user_id, "on_user_rating_timeout");
+}
+
+void UserManager::on_noforwards_request_timeout_callback(void *user_manager_ptr, int64 request_id_long) {
+  if (G()->close_flag()) {
+    return;
+  }
+
+  auto user_manager = static_cast<UserManager *>(user_manager_ptr);
+  send_closure_later(user_manager->actor_id(user_manager), &UserManager::on_noforwards_request_timeout,
+                     static_cast<int32>(request_id_long));
+}
+
+void UserManager::on_noforwards_request_timeout(int32 request_id) {
+  if (G()->close_flag()) {
+    return;
+  }
+
+  auto it = noforwards_request_message_ids_.find(request_id);
+  if (it == noforwards_request_message_ids_.end()) {
+    return;
+  }
+  auto message_full_id = it->second;
+  unregister_noforwards_request(message_full_id);
+  td_->messages_manager_->on_external_update_message_content(message_full_id, "on_noforwards_request_timeout", false,
+                                                             true);
 }
 
 UserId UserManager::get_user_id(const telegram_api::object_ptr<telegram_api::User> &user) {
@@ -9076,6 +9104,31 @@ void UserManager::on_load_user_full_from_database(UserId user_id, string value) 
   } else if (user_full->expires_at == 0.0) {
     reload_user_full(user_id, Auto(), "on_load_user_full_from_database 4");
   }
+}
+
+void UserManager::register_noforwards_request(MessageFullId message_full_id, int32 message_date) {
+  auto message_id = message_full_id.get_message_id();
+  auto duration = td_->option_manager_->get_option_integer("has_protected_content_disable_request_duration");
+  auto left_time = message_date + duration - G()->unix_time();
+  if (left_time > 0 && !message_id.is_scheduled()) {
+    auto &request_id = noforwards_request_ids_[message_full_id];
+    CHECK(request_id == 0);
+    request_id = ++current_noforwards_request_id_;
+    noforwards_request_message_ids_[request_id] = message_full_id;
+    noforwards_request_timeout_.set_timeout_in(request_id, static_cast<double>(left_time) + 1);
+  }
+}
+
+void UserManager::unregister_noforwards_request(MessageFullId message_full_id) {
+  auto it = noforwards_request_ids_.find(message_full_id);
+  if (it == noforwards_request_ids_.end()) {
+    return;
+  }
+  auto request_id = it->second;
+  CHECK(request_id != 0);
+  noforwards_request_ids_.erase(it);
+  noforwards_request_message_ids_.erase(request_id);
+  noforwards_request_timeout_.cancel_timeout(request_id);
 }
 
 void UserManager::get_web_app_placeholder(UserId user_id, Promise<td_api::object_ptr<td_api::outline>> &&promise) {

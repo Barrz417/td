@@ -355,7 +355,7 @@ class MessagesManager final : public Actor {
       vector<telegram_api::object_ptr<telegram_api::MessageExtendedMedia>> extended_media);
 
   void on_external_update_message_content(MessageFullId message_full_id, const char *source,
-                                          bool expect_no_message = false);
+                                          bool expect_no_message = false, bool need_reregister = false);
 
   void on_update_message_content(MessageFullId message_full_id);
 
