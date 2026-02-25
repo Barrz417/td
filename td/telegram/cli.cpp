@@ -8028,6 +8028,11 @@ class CliClient final : public Actor {
       string in_app_origin;
       get_args(args, link, in_app_origin);
       send_request(td_api::make_object<td_api::getOauthLinkInfo>(link, in_app_origin));
+    } else if (op == "cormc") {
+      string link;
+      string match_code;
+      get_args(args, link, match_code);
+      send_request(td_api::make_object<td_api::checkOauthRequestMatchCode>(link, match_code));
     } else if (op == "aor" || op == "aorw" || op == "aorp") {
       string link;
       string match_code;

@@ -1733,6 +1733,34 @@ class RequestUrlOauthQuery final : public Td::ResultHandler {
   }
 };
 
+class CheckUrlAuthMatchCodeQuery final : public Td::ResultHandler {
+  Promise<Unit> promise_;
+
+ public:
+  explicit CheckUrlAuthMatchCodeQuery(Promise<Unit> &&promise) : promise_(std::move(promise)) {
+  }
+
+  void send(string url, const string &match_code) {
+    send_query(G()->net_query_creator().create(telegram_api::messages_checkUrlAuthMatchCode(url, match_code)));
+  }
+
+  void on_result(BufferSlice packet) final {
+    auto result_ptr = fetch_result<telegram_api::messages_checkUrlAuthMatchCode>(packet);
+    if (result_ptr.is_error()) {
+      return on_error(result_ptr.move_as_error());
+    }
+
+    if (!result_ptr.ok()) {
+      return on_error(Status::Error(400, "MATCH_CODE_INVALID"));
+    }
+    promise_.set_value(Unit());
+  }
+
+  void on_error(Status status) final {
+    promise_.set_error(std::move(status));
+  }
+};
+
 class AcceptUrlAuthQuery final : public Td::ResultHandler {
   Promise<td_api::object_ptr<td_api::httpUrl>> promise_;
   string url_;
@@ -4011,6 +4039,10 @@ void LinkManager::get_link_login_url(const string &url, bool allow_write_access,
                                      Promise<td_api::object_ptr<td_api::httpUrl>> &&promise) {
   td_->create_handler<AcceptUrlAuthQuery>(std::move(promise))
       ->send(url, MessageFullId(), 0, allow_write_access, false, string());
+}
+
+void LinkManager::check_oauth_request_match_code(const string &url, const string &match_code, Promise<Unit> &&promise) {
+  td_->create_handler<CheckUrlAuthMatchCodeQuery>(std::move(promise))->send(url, match_code);
 }
 
 void LinkManager::accept_oauth_request(const string &url, const string &match_code, bool allow_write_access,

@@ -8744,7 +8744,7 @@ internalLinkTypeNewPrivateChat = InternalLinkType;
 internalLinkTypeNewStory content_type:StoryContentType = InternalLinkType;
 
 //@description The link is an OAuth link. Call getOauthLinkInfo with the given URL to process the link if the link was received from outside of the application; otherwise, ignore it.
-//-After getOauthLinkInfo, show the user confirmation dialog and call either acceptOauthRequest or declineOauthRequest
+//-After getOauthLinkInfo, show the user confirmation dialog and process it with checkOauthRequestMatchCode, acceptOauthRequest or declineOauthRequest
 //@url URL to be passed to getOauthLinkInfo
 internalLinkTypeOauth url:string = InternalLinkType;
 
@@ -12074,10 +12074,16 @@ getExternalLinkInfo link:string = LoginUrlInfo;
 //@allow_write_access Pass true if the current user allowed the bot that was returned in getExternalLinkInfo, to send them messages
 getExternalLink link:string allow_write_access:Bool = HttpUrl;
 
-//@description Returns information about an OAuth deep link. Use acceptOauthRequest or declineOauthRequest to process the link
+//@description Returns information about an OAuth deep link. Use checkOauthRequestMatchCode, acceptOauthRequest or declineOauthRequest to process the link
 //@url URL of the link
 //@in_app_origin Origin of the OAuth request if the request was received from the in-app browser; pass an empty string otherwise
 getOauthLinkInfo url:string in_app_origin:string = OauthLinkInfo;
+
+//@description Checks a match-code for an OAuth authorization request. If fails, then the authorization request has failed. Otherwise,
+//-authorization confirmation dialog must be shown and the link must be processed using acceptOauthRequest or declineOauthRequest
+//@url URL of the OAuth deep link
+//@match_code The matching code chosen by the user
+checkOauthRequestMatchCode url:string match_code:string = Ok;
 
 //@description Accepts an OAuth authorization request. Returns an HTTP URL to open after successful authorization.
 //-May return an empty link if just a toast about successful login has to be shown

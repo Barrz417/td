@@ -86,6 +86,8 @@ class LinkManager final : public Actor {
   void get_oauth_link_info(string &&link, const string &in_app_origin,
                            Promise<td_api::object_ptr<td_api::oauthLinkInfo>> &&promise);
 
+  void check_oauth_request_match_code(const string &url, const string &match_code, Promise<Unit> &&promise);
+
   void accept_oauth_request(const string &url, const string &match_code, bool allow_write_access,
                             bool allow_phone_number_access, Promise<td_api::object_ptr<td_api::httpUrl>> &&promise);
 

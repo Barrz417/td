@@ -3412,6 +3412,14 @@ void Requests::on_request(uint64 id, td_api::getOauthLinkInfo &request) {
   td_->link_manager_->get_oauth_link_info(std::move(request.url_), request.in_app_origin_, std::move(promise));
 }
 
+void Requests::on_request(uint64 id, td_api::checkOauthRequestMatchCode &request) {
+  CHECK_IS_USER();
+  CLEAN_INPUT_STRING(request.url_);
+  CLEAN_INPUT_STRING(request.match_code_);
+  CREATE_OK_REQUEST_PROMISE();
+  td_->link_manager_->check_oauth_request_match_code(request.url_, request.match_code_, std::move(promise));
+}
+
 void Requests::on_request(uint64 id, td_api::acceptOauthRequest &request) {
   CHECK_IS_USER();
   CLEAN_INPUT_STRING(request.url_);
