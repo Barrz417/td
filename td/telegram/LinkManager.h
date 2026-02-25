@@ -204,6 +204,8 @@ class LinkManager final : public Actor {
 
   static Result<string> get_proxy_link(const Proxy &proxy, bool is_internal);
 
+  static Result<Slice> check_tg_url_host(Slice url, Slice host);
+
   Td *td_;
   ActorShared<> parent_;
 

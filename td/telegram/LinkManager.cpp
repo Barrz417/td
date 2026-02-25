@@ -4156,34 +4156,41 @@ string LinkManager::get_t_me_url() {
   }
 }
 
-Result<CustomEmojiId> LinkManager::get_link_custom_emoji_id(Slice url) {
-  string lower_cased_url = to_lower(url);
-  url = lower_cased_url;
+Result<Slice> LinkManager::check_tg_url_host(Slice url, Slice host) {
+  size_t min_size = 3 + 2 + host.size() + 1;
+  string lower_cased_url_str = to_lower(url.size() > min_size ? url.substr(0, min_size) : url);
+  Slice lower_cased_url = lower_cased_url_str;
 
   Slice link_scheme("tg:");
-  if (!begins_with(url, link_scheme)) {
-    return Status::Error(400, "Custom emoji URL must have scheme tg");
+  if (!begins_with(lower_cased_url, link_scheme)) {
+    return Status::Error(400, "URL must have scheme tg");
   }
+  lower_cased_url.remove_prefix(link_scheme.size());
   url.remove_prefix(link_scheme.size());
   if (begins_with(url, "//")) {
+    lower_cased_url.remove_prefix(2);
     url.remove_prefix(2);
   }
 
-  Slice host("emoji");
-  if (!begins_with(url, host) || (url.size() > host.size() && Slice("/?#").find(url[host.size()]) == Slice::npos)) {
-    return Status::Error(400, PSLICE() << "Custom emoji URL must have host \"" << host << '"');
+  if (!begins_with(lower_cased_url, host) ||
+      (url.size() > host.size() && Slice("/?#").find(url[host.size()]) == Slice::npos)) {
+    return Status::Error(400, PSLICE() << "URL must have host \"" << host << '"');
   }
   url.remove_prefix(host.size());
   if (begins_with(url, "/")) {
     url.remove_prefix(1);
   }
   if (!begins_with(url, "?")) {
-    return Status::Error(400, "Custom emoji URL must have an emoji identifier");
+    return Status::Error(400, "URL must have parameters");
   }
   url.remove_prefix(1);
   url.truncate(url.find('#'));
+  return std::move(url);
+}
 
-  for (auto parameter : full_split(url, '&')) {
+Result<CustomEmojiId> LinkManager::get_link_custom_emoji_id(Slice url) {
+  TRY_RESULT(query, check_tg_url_host(url, "emoji"));
+  for (auto parameter : full_split(query, '&')) {
     Slice key;
     Slice value;
     std::tie(key, value) = split(parameter, '=');
