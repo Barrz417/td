@@ -1469,13 +1469,19 @@ TEST(MessageEntities, parse_markdown) {
   check_parse_markdown("🏟 🏟>", "Character '>' is reserved and must be escaped with the preceding '\\'");
   check_parse_markdown("🏟 🏟![", "Can't find end of CustomEmoji entity at byte offset 9");
   check_parse_markdown("🏟 🏟![👍", "Can't find end of CustomEmoji entity at byte offset 9");
-  check_parse_markdown("🏟 🏟![👍]", "Custom emoji entity must contain a tg://emoji URL");
-  check_parse_markdown("🏟 🏟![👍](tg://emoji?id=1234", "Can't find end of a custom emoji URL at byte offset 17");
-  check_parse_markdown("🏟 🏟![👍](t://emoji?id=1234)", "URL must have scheme tg");
-  check_parse_markdown("🏟 🏟![👍](tg:emojis?id=1234)", "URL must have host \"emoji\"");
-  check_parse_markdown("🏟 🏟![👍](tg://emoji#test)", "URL must have parameters");
-  check_parse_markdown("🏟 🏟![👍](tg://emoji?test=1#&id=25)", "Custom emoji URL must have an emoji identifier");
-  check_parse_markdown("🏟 🏟![👍](tg://emoji?test=1231&id=025)", "Invalid custom emoji identifier specified");
+  check_parse_markdown("🏟 🏟![👍]", "The entity must contain a tg://emoji or tg://time URL");
+  check_parse_markdown("🏟 🏟![👍](tg://emoji?id=1234", "Can't find end of a URL at byte offset 17");
+  check_parse_markdown("🏟 🏟![👍](t://emoji?id=1234)", "Invalid tg://emoji or tg://time URL specified");
+  check_parse_markdown("🏟 🏟![👍](tg:emojis?id=1234)", "Invalid tg://emoji or tg://time URL specified");
+  check_parse_markdown("🏟 🏟![👍](tg://emoji#test)", "Invalid tg://emoji or tg://time URL specified");
+  check_parse_markdown("🏟 🏟![👍](tg://emoji?test=1#&id=25)", "Invalid tg://emoji or tg://time URL specified");
+  check_parse_markdown("🏟 🏟![👍](tg://emoji?test=1231&id=025)", "Invalid tg://emoji or tg://time URL specified");
+  check_parse_markdown("🏟 🏟![👍](tg://time?id=1234", "Can't find end of a URL at byte offset 17");
+  check_parse_markdown("🏟 🏟![👍](t://time?id=1234)", "Invalid tg://emoji or tg://time URL specified");
+  check_parse_markdown("🏟 🏟![👍](tg:times?id=1234)", "Invalid tg://emoji or tg://time URL specified");
+  check_parse_markdown("🏟 🏟![👍](tg://time#test)", "Invalid tg://emoji or tg://time URL specified");
+  check_parse_markdown("🏟 🏟![👍](tg://time?test=1#&date=25)", "Invalid tg://emoji or tg://time URL specified");
+  check_parse_markdown("🏟 🏟![👍](tg://time?test=1231&date=025)", "Invalid tg://emoji or tg://time URL specified");
   check_parse_markdown(">*b\n>ld \n>bo\nld*\nasd\ndef", "Can't find end of Bold entity at byte offset 1");
   check_parse_markdown(">\n*a*>2", "Character '>' is reserved and must be escaped with the preceding '\\'");
   check_parse_markdown(">asd\n>q||e||w||\n||asdad", "Can't find end of Spoiler entity at byte offset 16");
@@ -1546,6 +1552,18 @@ TEST(MessageEntities, parse_markdown) {
                        {{0, 12, td::UserId(static_cast<td::int64>(123456))}});
   check_parse_markdown("🏟 🏟![👍](TG://EMoJI/?test=1231&id=25#id=32)a", "🏟 🏟👍a",
                        {{td::MessageEntity::Type::CustomEmoji, 5, 2, td::CustomEmojiId(static_cast<td::int64>(25))}});
+  check_parse_markdown("🏟 🏟![👍](TG://TiME/?test=1231&unix=25#unix=32)a", "🏟 🏟👍a",
+                       {{td::MessageEntity::Type::FormattedDate, 5, 2, 25, 0}});
+  check_parse_markdown("🏟 🏟![👍](TG://TiME/?test=1231&format=R&unix=25#unix=32)a", "🏟 🏟👍a",
+                       {{td::MessageEntity::Type::FormattedDate, 5, 2, 25, 1}});
+  check_parse_markdown("🏟 🏟![👍](TG://TiME/?test=1231&format=dt&unix=25#unix=32)a", "🏟 🏟👍a",
+                       {{td::MessageEntity::Type::FormattedDate, 5, 2, 25, 10}});
+  check_parse_markdown("🏟 🏟![👍](TG://TiME/?test=1231&format=DT&unix=25#unix=32)a", "🏟 🏟👍a",
+                       {{td::MessageEntity::Type::FormattedDate, 5, 2, 25, 20}});
+  check_parse_markdown("🏟 🏟![👍](TG://TiME/?test=1231&format=w&unix=25#unix=32)a", "🏟 🏟👍a",
+                       {{td::MessageEntity::Type::FormattedDate, 5, 2, 25, 32}});
+  check_parse_markdown("🏟 🏟![👍](TG://TiME/?test=1231&format=Wt&unix=25#unix=32)a", "🏟 🏟👍a",
+                       {{td::MessageEntity::Type::FormattedDate, 5, 2, 25, 34}});
   check_parse_markdown("> \n> \n>", " \n \n", {{td::MessageEntity::Type::BlockQuote, 0, 4}});
   check_parse_markdown("> \\>\n \\> \n>", " >\n > \n", {{td::MessageEntity::Type::BlockQuote, 0, 3}});
   check_parse_markdown("abc\n> \n> \n>\ndef", "abc\n \n \n\ndef", {{td::MessageEntity::Type::BlockQuote, 4, 5}});

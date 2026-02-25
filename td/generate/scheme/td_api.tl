@@ -5178,7 +5178,7 @@ dateTimeFormattingTypeRelative = DateTimeFormattingType;
 
 //@description The date and time must be shown as absolute timestamps
 //@time_precision The precision with which hours, minutes and seconds are shown
-//@date_precision The precision with which the day is shown
+//@date_precision The precision with which the date is shown
 //@show_day_of_week True, if the day of week should be shown
 dateTimeFormattingTypeAbsolute time_precision:DateTimePartPrecision date_precision:DateTimePartPrecision show_day_of_week:Bool = DateTimeFormattingType;
 

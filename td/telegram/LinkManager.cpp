@@ -4344,6 +4344,30 @@ Result<CustomEmojiId> LinkManager::get_link_custom_emoji_id(Slice url) {
   return Status::Error(400, "Custom emoji URL must have an emoji identifier");
 }
 
+Result<LinkManager::DateFormat> LinkManager::get_link_date_format(Slice url) {
+  TRY_RESULT(query, check_tg_url_host(url, "time"));
+  DateFormat result;
+  for (auto parameter : full_split(query, '&')) {
+    Slice key;
+    Slice value;
+    std::tie(key, value) = split(parameter, '=');
+    if (key == Slice("unix")) {
+      auto r_date = to_integer_safe<int32>(value);
+      if (r_date.is_error() || r_date.ok() <= 0) {
+        return Status::Error(400, "Invalid Unix time specified");
+      }
+      result.date_ = r_date.ok();
+    }
+    if (key == Slice("format")) {
+      result.format_ = value.str();
+    }
+  }
+  if (result.date_ == 0) {
+    return Status::Error(400, "URL must have the corresponding Unix time");
+  }
+  return std::move(result);
+}
+
 Result<DialogBoostLinkInfo> LinkManager::get_dialog_boost_link_info(Slice url) {
   if (url.empty()) {
     return Status::Error("URL must be non-empty");

@@ -124,6 +124,12 @@ class LinkManager final : public Actor {
 
   static Result<CustomEmojiId> get_link_custom_emoji_id(Slice url);
 
+  struct DateFormat {
+    int32 date_ = 0;
+    string format_;
+  };
+  static Result<DateFormat> get_link_date_format(Slice url);
+
   static Result<DialogBoostLinkInfo> get_dialog_boost_link_info(Slice url);
 
   static Result<MessageLinkInfo> get_message_link_info(Slice url);

@@ -2295,6 +2295,8 @@ Result<vector<MessageEntity>> parse_markdown_v2(string &text) {
       UserId user_id;
       CustomEmojiId custom_emoji_id;
       bool skip_entity = utf16_offset == nested_entities.back().entity_offset;
+      int32 date = 0;
+      int32 date_flags = 0;
       switch (type) {
         case MessageEntity::Type::Bold:
         case MessageEntity::Type::Italic:
@@ -2343,7 +2345,7 @@ Result<vector<MessageEntity>> parse_markdown_v2(string &text) {
         }
         case MessageEntity::Type::CustomEmoji: {
           if (text[i + 1] != '(') {
-            return Status::Error(400, "Custom emoji entity must contain a tg://emoji URL");
+            return Status::Error(400, "The entity must contain a tg://emoji or tg://time URL");
           }
           i += 2;
           string url;
@@ -2357,10 +2359,22 @@ Result<vector<MessageEntity>> parse_markdown_v2(string &text) {
             url += text[i++];
           }
           if (text[i] != ')') {
-            return Status::Error(400, PSLICE()
-                                          << "Can't find end of a custom emoji URL at byte offset " << url_begin_pos);
+            return Status::Error(400, PSLICE() << "Can't find end of a URL at byte offset " << url_begin_pos);
           }
-          TRY_RESULT_ASSIGN(custom_emoji_id, LinkManager::get_link_custom_emoji_id(url));
+          auto r_custom_emoji_id = LinkManager::get_link_custom_emoji_id(url);
+          if (r_custom_emoji_id.is_ok()) {
+            custom_emoji_id = r_custom_emoji_id.move_as_ok();
+          } else {
+            auto r_date_format = LinkManager::get_link_date_format(url);
+            if (r_date_format.is_ok()) {
+              auto date_format = r_date_format.move_as_ok();
+              TRY_RESULT_ASSIGN(date_flags, get_date_flags(date_format.format_));
+              date = date_format.date_;
+              type = MessageEntity::Type::FormattedDate;
+            } else {
+              return Status::Error(400, "Invalid tg://emoji or tg://time URL specified");
+            }
+          }
           break;
         }
         case MessageEntity::Type::BlockQuote:
@@ -2384,6 +2398,8 @@ Result<vector<MessageEntity>> parse_markdown_v2(string &text) {
           entities.emplace_back(entity_offset, entity_length, user_id);
         } else if (custom_emoji_id.is_valid()) {
           entities.emplace_back(type, entity_offset, entity_length, custom_emoji_id);
+        } else if (date != 0) {
+          entities.emplace_back(type, entity_offset, entity_length, date, date_flags);
         } else {
           entities.emplace_back(type, entity_offset, entity_length, std::move(argument));
         }
@@ -4023,7 +4039,8 @@ vector<MessageEntity> get_message_entities(const UserManager *user_manager,
             date_flags |= MessageEntity::DateFlags::DayOfWeek;
           }
         }
-        entities.emplace_back(MessageEntity::Type::FormattedDate, entity->offset_, entity->length_, entity->date_, date_flags);
+        entities.emplace_back(MessageEntity::Type::FormattedDate, entity->offset_, entity->length_, entity->date_,
+                              date_flags);
         break;
       }
       default:
