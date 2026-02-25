@@ -1716,7 +1716,7 @@ class RequestUrlOauthQuery final : public Td::ResultHandler {
         promise_.set_value(td_api::make_object<td_api::oauthLinkInfo>(
             user_id.get(), url_, request->domain_, td_->user_manager_->get_user_id_object(bot_user_id, "oauthLinkInfo"),
             request->request_write_access_, request->request_phone_number_, request->browser_, request->platform_,
-            request->ip_, request->region_, std::move(request->match_codes_)));
+            request->ip_, request->region_, request->match_codes_first_, std::move(request->match_codes_)));
         break;
       }
       case telegram_api::urlAuthResultAccepted::ID:

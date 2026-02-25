@@ -3489,8 +3489,9 @@ loginUrlInfoRequestConfirmation url:string domain:string bot_user_id:int53 reque
 //@platform Operating system the browser is running on
 //@ip_address IP address from which the authorization is performed, in human-readable format
 //@location Human-readable description of a country and a region from which the authorization is performed, based on the IP address
+//@match_code_first True, if code matching dialog must be shown first and checkOauthRequestMatchCode must be called before acceptOauthRequest. Otherwise, checkOauthRequestMatchCode must not be called
 //@match_codes The list of codes to match; may be empty if irrelevant
-oauthLinkInfo user_id:int53 url:string domain:string bot_user_id:int53 request_write_access:Bool request_phone_number_access:Bool browser:string platform:string ip_address:string location:string match_codes:vector<string> = OauthLinkInfo;
+oauthLinkInfo user_id:int53 url:string domain:string bot_user_id:int53 request_write_access:Bool request_phone_number_access:Bool browser:string platform:string ip_address:string location:string match_code_first:Bool match_codes:vector<string> = OauthLinkInfo;
 
 
 //@description Contains parameters of the application theme
