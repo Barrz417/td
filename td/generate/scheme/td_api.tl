@@ -2525,7 +2525,7 @@ messageSenderUser user_id:int53 = MessageSender;
 messageSenderChat chat_id:int53 = MessageSender;
 
 
-//@description Represents a list of message senders @total_count Approximate total number of messages senders found @senders List of message senders
+//@description Represents a list of message senders @total_count Approximate total number of message senders found @senders List of message senders
 messageSenders total_count:int32 senders:vector<MessageSender> = MessageSenders;
 
 
@@ -2534,6 +2534,15 @@ chatMessageSender sender:MessageSender needs_premium:Bool = ChatMessageSender;
 
 //@description Represents a list of message senders, which can be used to send messages in a chat @senders List of available message senders
 chatMessageSenders senders:vector<chatMessageSender> = ChatMessageSenders;
+
+
+//@description Represents a poll voter
+//@voter_id The voter identifier
+//@date Point in time (Unix timestamp) when the vote was added
+pollVoter voter_id:MessageSender date:int32 = PollVoter;
+
+//@description Represents a list of poll voters @total_count Approximate total number of poll voters found @voters List of poll voters
+pollVoters total_count:int32 voters:vector<pollVoter> = PollVoters;
 
 
 //@class MessageReadDate @description Describes read date of a recent outgoing message in a private chat
@@ -11797,7 +11806,7 @@ setPollAnswer chat_id:int53 message_id:int53 option_ids:vector<int32> = Ok;
 //@option_id 0-based identifier of the answer option
 //@offset Number of voters to skip in the result; must be non-negative
 //@limit The maximum number of voters to be returned; must be positive and can't be greater than 50. For optimal performance, the number of returned voters is chosen by TDLib and can be smaller than the specified limit, even if the end of the voter list has not been reached
-getPollVoters chat_id:int53 message_id:int53 option_id:int32 offset:int32 limit:int32 = MessageSenders;
+getPollVoters chat_id:int53 message_id:int53 option_id:int32 offset:int32 limit:int32 = PollVoters;
 
 //@description Stops a poll
 //@chat_id Identifier of the chat to which the poll belongs

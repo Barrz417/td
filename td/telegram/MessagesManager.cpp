@@ -35593,7 +35593,7 @@ void MessagesManager::set_poll_answer(MessageFullId message_full_id, vector<int3
 }
 
 void MessagesManager::get_poll_voters(MessageFullId message_full_id, int32 option_id, int32 offset, int32 limit,
-                                      Promise<td_api::object_ptr<td_api::messageSenders>> &&promise) {
+                                      Promise<td_api::object_ptr<td_api::pollVoters>> &&promise) {
   auto m = get_message_force(message_full_id, "get_poll_voters");
   if (m == nullptr) {
     return promise.set_error(400, "Message not found");
