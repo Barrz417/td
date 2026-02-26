@@ -9093,6 +9093,9 @@ void UserManager::on_load_user_full_from_database(UserId user_id, string value) 
   if (user_id == get_my_id() && !user_full->fallback_photo.is_empty()) {
     register_suggested_profile_photo(user_full->fallback_photo);
   }
+  if (user_full->noforwards_my_enabled || user_full->noforwards_peer_enabled) {
+    user_full->is_has_protected_content_changed = true;
+  }
 
   td_->group_call_manager_->on_update_dialog_about(DialogId(user_id), user_full->about, false);
 
