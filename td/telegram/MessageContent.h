@@ -183,6 +183,9 @@ vector<UserId> get_message_content_added_user_ids(const MessageContent *content)
 
 UserId get_message_content_deleted_user_id(const MessageContent *content);
 
+telegram_api::object_ptr<telegram_api::inputPhoneCall> get_message_content_input_phone_call(
+    const MessageContent *content);
+
 int32 get_message_content_live_location_period(const MessageContent *content);
 
 bool get_message_content_poll_is_anonymous(const Td *td, const MessageContent *content);

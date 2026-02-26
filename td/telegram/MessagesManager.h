@@ -983,6 +983,9 @@ class MessagesManager final : public Actor {
 
   Result<ServerMessageId> get_giveaway_message_id(MessageFullId message_full_id);
 
+  void get_input_phone_call_to_promise(MessageFullId message_full_id,
+                                       Promise<telegram_api::object_ptr<telegram_api::inputPhoneCall>> &&promise);
+
   bool can_set_game_score(MessageFullId message_full_id) const;
 
   void get_current_state(vector<td_api::object_ptr<td_api::Update>> &updates) const;

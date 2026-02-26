@@ -8,14 +8,14 @@
 
 namespace td {
 
-Result<InputCallId> InputCallId::get_input_call_id(const td_api::object_ptr<td_api::InputCallId> &input_call_id) {
-  if (input_call_id == nullptr) {
+Result<InputCallId> InputCallId::get_input_call_id(const td_api::object_ptr<td_api::InputCall> &input_call) {
+  if (input_call == nullptr) {
     return Status::Error(400, "Input call must be non-empty");
   }
   InputCallId result;
-  switch (input_call_id->get_id()) {
-    case td_api::inputCallIdCompleted::ID: {
-      auto call = static_cast<const td_api::inputCallIdCompleted *>(input_call_id.get());
+  switch (input_call->get_id()) {
+    case td_api::inputCallDiscarded::ID: {
+      auto call = static_cast<const td_api::inputCallDiscarded *>(input_call.get());
       result.type_ = Type::Call;
       result.call_id_ = CallId(call->call_id_);
       if (!result.call_id_.is_valid()) {
@@ -23,8 +23,8 @@ Result<InputCallId> InputCallId::get_input_call_id(const td_api::object_ptr<td_a
       }
       break;
     }
-    case td_api::inputCallIdFromMessage::ID: {
-      auto call = static_cast<const td_api::inputCallIdFromMessage *>(input_call_id.get());
+    case td_api::inputCallFromMessage::ID: {
+      auto call = static_cast<const td_api::inputCallFromMessage *>(input_call.get());
       auto dialog_id = DialogId(call->chat_id_);
       auto message_id = MessageId(call->message_id_);
       if (!dialog_id.is_valid()) {

@@ -6574,6 +6574,16 @@ UserId get_message_content_deleted_user_id(const MessageContent *content) {
   }
 }
 
+telegram_api::object_ptr<telegram_api::inputPhoneCall> get_message_content_input_phone_call(
+    const MessageContent *content) {
+  CHECK(content->get_type() == MessageContentType::Call);
+  auto call = static_cast<const MessageCall *>(content);
+  if (call->call_access_hash == 0) {
+    return nullptr;
+  }
+  return telegram_api::make_object<telegram_api::inputPhoneCall>(call->call_id, call->call_access_hash);
+}
+
 int32 get_message_content_live_location_period(const MessageContent *content) {
   switch (content->get_type()) {
     case MessageContentType::LiveLocation:

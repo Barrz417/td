@@ -19,7 +19,7 @@ class InputCallId {
  public:
   enum class Type : int32 { Call, Message };
 
-  static Result<InputCallId> get_input_call_id(const td_api::object_ptr<td_api::InputCallId> &input_call_id);
+  static Result<InputCallId> get_input_call_id(const td_api::object_ptr<td_api::InputCall> &input_call);
 
   Type get_type() const {
     return type_;

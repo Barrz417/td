@@ -522,6 +522,10 @@ class CliClient final : public Actor {
     return to_integer<int64>(str);
   }
 
+  static int32 as_call_id(Slice str) {
+    return to_integer<int32>(trim(str));
+  }
+
   static int32 as_chat_folder_id(Slice str) {
     return to_integer<int32>(trim(str));
   }
@@ -839,7 +843,34 @@ class CliClient final : public Actor {
   };
 
   void get_args(string &args, CallId &arg) const {
-    arg.call_id = to_integer<int32>(trim(args));
+    arg.call_id = as_call_id(args);
+  }
+
+  struct InputCall {
+    string input_call;
+    bool is_message = false;
+    int64 chat_id = 0;
+    int64 message_id = 0;
+
+    operator td_api::object_ptr<td_api::InputCall>() const {
+      if (input_call.empty()) {
+        return nullptr;
+      }
+      if (is_message) {
+        return td_api::make_object<td_api::inputCallFromMessage>(chat_id, message_id);
+      }
+      return td_api::make_object<td_api::inputCallDiscarded>(as_call_id(input_call));
+    }
+  };
+
+  void get_args(string &args, InputCall &arg) const {
+    arg.input_call = std::move(args);
+    auto message_full_id = autosplit(arg.input_call);
+    if (message_full_id.size() == 2) {
+      arg.is_message = true;
+      arg.chat_id = as_chat_id(message_full_id[0]);
+      arg.message_id = as_message_id(message_full_id[1]);
+    }
   }
 
   struct GroupCallId {
@@ -5098,7 +5129,7 @@ class CliClient final : public Actor {
       get_args(args, call_id, is_disconnected, invite_link);
       send_request(td_api::make_object<td_api::discardCall>(call_id, is_disconnected, invite_link, 0, rand_bool(), 0));
     } else if (op == "scr") {
-      CallId call_id;
+      InputCall call_id;
       int32 rating;
       get_args(args, call_id, rating);
       vector<td_api::object_ptr<td_api::CallProblem>> problems;
@@ -5113,11 +5144,11 @@ class CliClient final : public Actor {
       send_request(td_api::make_object<td_api::sendCallRating>(call_id, rating, "Wow, such good call! (TDLib test)",
                                                                std::move(problems)));
     } else if (op == "scdi") {
-      CallId call_id;
+      InputCall call_id;
       get_args(args, call_id);
       send_request(td_api::make_object<td_api::sendCallDebugInformation>(call_id, "{}"));
     } else if (op == "sclog") {
-      CallId call_id;
+      InputCall call_id;
       string log_file;
       get_args(args, call_id, log_file);
       send_request(td_api::make_object<td_api::sendCallLog>(call_id, as_input_file(log_file)));

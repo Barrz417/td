@@ -35765,6 +35765,22 @@ Result<ServerMessageId> MessagesManager::get_giveaway_message_id(MessageFullId m
   return m->message_id.get_server_message_id();
 }
 
+void MessagesManager::get_input_phone_call_to_promise(
+    MessageFullId message_full_id, Promise<telegram_api::object_ptr<telegram_api::inputPhoneCall>> &&promise) {
+  auto m = get_message_force(message_full_id, "get_input_phone_call_to_promise");
+  if (m == nullptr) {
+    return promise.set_error(400, "Message not found");
+  }
+  if (m->content->get_type() != MessageContentType::Call) {
+    return promise.set_error(400, "The message isn't a call message");
+  }
+  auto input_phone_call = get_message_content_input_phone_call(m->content.get());
+  if (input_phone_call == nullptr) {
+    return promise.set_error(400, "The call can't be used");
+  }
+  promise.set_value(std::move(input_phone_call));
+}
+
 void MessagesManager::add_sponsored_dialog(const Dialog *d, DialogSource source) {
   if (td_->auth_manager_->is_bot()) {
     return;

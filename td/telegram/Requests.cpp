@@ -4789,7 +4789,7 @@ void Requests::on_request(uint64 id, td_api::sendCallRating &request) {
   CHECK_IS_USER();
   CLEAN_INPUT_STRING(request.comment_);
   CREATE_OK_REQUEST_PROMISE();
-  send_closure(G()->call_manager(), &CallManager::rate_call, CallId(request.call_id_), request.rating_,
+  send_closure(G()->call_manager(), &CallManager::rate_call, std::move(request.call_id_), request.rating_,
                std::move(request.comment_), std::move(request.problems_), std::move(promise));
 }
 
@@ -4797,15 +4797,15 @@ void Requests::on_request(uint64 id, td_api::sendCallDebugInformation &request) 
   CHECK_IS_USER();
   CLEAN_INPUT_STRING(request.debug_information_);
   CREATE_OK_REQUEST_PROMISE();
-  send_closure(G()->call_manager(), &CallManager::send_call_debug_information, CallId(request.call_id_),
+  send_closure(G()->call_manager(), &CallManager::send_call_debug_information, std::move(request.call_id_),
                std::move(request.debug_information_), std::move(promise));
 }
 
 void Requests::on_request(uint64 id, td_api::sendCallLog &request) {
   CHECK_IS_USER();
   CREATE_OK_REQUEST_PROMISE();
-  send_closure(G()->call_manager(), &CallManager::send_call_log, CallId(request.call_id_), std::move(request.log_file_),
-               std::move(promise));
+  send_closure(G()->call_manager(), &CallManager::send_call_log, std::move(request.call_id_),
+               std::move(request.log_file_), std::move(promise));
 }
 
 void Requests::on_request(uint64 id, const td_api::getVideoChatAvailableParticipants &request) {

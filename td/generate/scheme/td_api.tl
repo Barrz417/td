@@ -6298,15 +6298,15 @@ callId id:int32 = CallId;
 groupCallId id:int32 = GroupCallId;
 
 
-//@class InputCallId @description Describes a call
+//@class InputCall @description Describes a call
 
-//@description A just completed call @call_id Identifier of the call
-inputCallIdCompleted call_id:int32 = InputCallId;
+//@description A just ended call @call_id Identifier of the call
+inputCallDiscarded call_id:int32 = InputCall;
 
 //@description A call from a message of the type messageCall
 //@chat_id Chat identifier of the message
 //@message_id Message identifier
-inputCallIdFromMessage chat_id:int53 message_id:int53 = InputCallId;
+inputCallFromMessage chat_id:int53 message_id:int53 = InputCall;
 
 
 //@class CallState @description Describes the current call state
@@ -13040,13 +13040,13 @@ discardCall call_id:int32 is_disconnected:Bool invite_link:string duration:int32
 //@rating Call rating; 1-5
 //@comment An optional user comment if the rating is less than 5
 //@problems List of the exact types of problems with the call, specified by the user
-sendCallRating call_id:int32 rating:int32 comment:string problems:vector<CallProblem> = Ok;
+sendCallRating call_id:InputCall rating:int32 comment:string problems:vector<CallProblem> = Ok;
 
 //@description Sends debug information for a call to Telegram servers @call_id Call identifier @debug_information Debug information in application-specific format
-sendCallDebugInformation call_id:int32 debug_information:string = Ok;
+sendCallDebugInformation call_id:InputCall debug_information:string = Ok;
 
 //@description Sends log file for a call to Telegram servers @call_id Call identifier @log_file Call log file. Only inputFileLocal and inputFileGenerated are supported
-sendCallLog call_id:int32 log_file:InputFile = Ok;
+sendCallLog call_id:InputCall log_file:InputFile = Ok;
 
 
 //@description Returns the list of participant identifiers, on whose behalf a video chat in the chat can be joined @chat_id Chat identifier
