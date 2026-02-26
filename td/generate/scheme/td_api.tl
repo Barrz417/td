@@ -4781,8 +4781,12 @@ messageChecklist list:checklist = MessageContent;
 //@paid_media_caption Extended media caption; may be null if none
 messageInvoice product_info:productInfo currency:string total_amount:int53 start_parameter:string is_test:Bool need_shipping_address:Bool receipt_message_id:int53 paid_media:PaidMedia paid_media_caption:formattedText = MessageContent;
 
-//@description A message with information about an ended call @is_video True, if the call was a video call @discard_reason Reason why the call was discarded @duration Call duration, in seconds
-messageCall is_video:Bool discard_reason:CallDiscardReason duration:int32 = MessageContent;
+//@description A message with information about an ended call
+//@unique_id Persistent unique call identifier; 0 for calls from other devices, which can't be passed as inputCallFromMessage
+//@is_video True, if the call was a video call
+//@discard_reason Reason why the call was discarded
+//@duration Call duration, in seconds
+messageCall unique_id:int64 is_video:Bool discard_reason:CallDiscardReason duration:int32 = MessageContent;
 
 //@description A message with information about a group call not bound to a chat. If the message is incoming, the call isn't active, isn't missed, and has no duration,
 //-and getOption("can_accept_calls") is true, then incoming call screen must be shown to the user. Use getGroupCallParticipants to show current group call participants on the screen.
@@ -6303,7 +6307,7 @@ groupCallId id:int32 = GroupCallId;
 //@description A just ended call @call_id Identifier of the call
 inputCallDiscarded call_id:int32 = InputCall;
 
-//@description A call from a message of the type messageCall
+//@description A call from a message of the type messageCall with non-zero messageCall.unique_id
 //@chat_id Chat identifier of the message
 //@message_id Message identifier
 inputCallFromMessage chat_id:int53 message_id:int53 = InputCall;
