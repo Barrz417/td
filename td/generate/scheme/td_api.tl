@@ -6298,6 +6298,17 @@ callId id:int32 = CallId;
 groupCallId id:int32 = GroupCallId;
 
 
+//@class InputCallId @description Describes a call
+
+//@description A just completed call @call_id Identifier of the call
+inputCallIdCompleted call_id:int32 = InputCallId;
+
+//@description A call from a message of the type messageCall
+//@chat_id Chat identifier of the message
+//@message_id Message identifier
+inputCallIdFromMessage chat_id:int53 message_id:int53 = InputCallId;
+
+
 //@class CallState @description Describes the current call state
 
 //@description The call is pending, waiting to be accepted by a user @is_created True, if the call has already been created by the server @is_received True, if the call has already been received by the other party
