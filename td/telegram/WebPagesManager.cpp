@@ -1731,6 +1731,30 @@ td_api::object_ptr<td_api::LinkPreviewType> WebPagesManager::get_link_preview_ty
     }
   }
   if (!web_page->embed_type_.empty() || !web_page->embed_url_.empty()) {
+    if (web_page->type_ == "audio") {
+      LOG_IF(ERROR,
+             web_page->document_.type != Document::Type::Unknown && web_page->document_.type != Document::Type::Audio)
+          << "Receive wrong document for " << web_page->url_;
+      auto audio = web_page->document_.type == Document::Type::Audio
+                       ? td_->audios_manager_->get_audio_object(web_page->document_.file_id)
+                       : nullptr;
+      if (web_page->embed_type_ == "iframe") {
+        return td_api::make_object<td_api::linkPreviewTypeEmbeddedAudioPlayer>(
+            web_page->embed_url_, std::move(audio), get_photo_object(td_->file_manager_.get(), web_page->photo_),
+            web_page->duration_, web_page->embed_dimensions_.width, web_page->embed_dimensions_.height);
+      } else if (audio != nullptr) {
+        return td_api::make_object<td_api::linkPreviewTypeAudio>(std::move(audio));
+      } else if (!web_page->embed_url_.empty()) {
+        return td_api::make_object<td_api::linkPreviewTypeExternalAudio>(web_page->embed_url_, web_page->embed_type_,
+                                                                         web_page->duration_);
+      } else {
+        if (!web_page->photo_.is_empty()) {
+          return td_api::make_object<td_api::linkPreviewTypePhoto>(
+              get_photo_object(td_->file_manager_.get(), web_page->photo_));
+        }
+        return td_api::make_object<td_api::linkPreviewTypeUnsupported>();
+      }
+    }
     if (web_page->type_ == "gif") {
       LOG_IF(ERROR, web_page->document_.type != Document::Type::Unknown &&
                         web_page->document_.type != Document::Type::Animation)
@@ -1753,11 +1777,6 @@ td_api::object_ptr<td_api::LinkPreviewType> WebPagesManager::get_link_preview_ty
       }
     }
     if (web_page->embed_type_ == "iframe") {
-      if (web_page->type_ == "audio") {
-        return td_api::make_object<td_api::linkPreviewTypeEmbeddedAudioPlayer>(
-            web_page->embed_url_, get_photo_object(td_->file_manager_.get(), web_page->photo_), web_page->duration_,
-            web_page->embed_dimensions_.width, web_page->embed_dimensions_.height);
-      }
       if (web_page->type_ == "video") {
         return td_api::make_object<td_api::linkPreviewTypeEmbeddedVideoPlayer>(
             web_page->embed_url_, get_photo_object(td_->file_manager_.get(), web_page->photo_), web_page->duration_,
@@ -1765,26 +1784,6 @@ td_api::object_ptr<td_api::LinkPreviewType> WebPagesManager::get_link_preview_ty
       }
     } else {
       // ordinary animation/audio/video
-      if (web_page->type_ == "audio") {
-        LOG_IF(ERROR,
-               web_page->document_.type != Document::Type::Unknown && web_page->document_.type != Document::Type::Audio)
-            << "Receive wrong document for " << web_page->url_;
-        auto audio = web_page->document_.type == Document::Type::Audio
-                         ? td_->audios_manager_->get_audio_object(web_page->document_.file_id)
-                         : nullptr;
-        if (audio != nullptr) {
-          return td_api::make_object<td_api::linkPreviewTypeAudio>(std::move(audio));
-        } else if (!web_page->embed_url_.empty()) {
-          return td_api::make_object<td_api::linkPreviewTypeExternalAudio>(web_page->embed_url_, web_page->embed_type_,
-                                                                           web_page->duration_);
-        } else {
-          if (!web_page->photo_.is_empty()) {
-            return td_api::make_object<td_api::linkPreviewTypePhoto>(
-                get_photo_object(td_->file_manager_.get(), web_page->photo_));
-          }
-          return td_api::make_object<td_api::linkPreviewTypeUnsupported>();
-        }
-      }
       if (web_page->type_ == "video") {
         LOG_IF(ERROR,
                web_page->document_.type != Document::Type::Unknown && web_page->document_.type != Document::Type::Video)

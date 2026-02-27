@@ -4002,11 +4002,12 @@ linkPreviewTypeEmbeddedAnimationPlayer url:string animation:animation thumbnail:
 
 //@description The link is a link to an audio player
 //@url URL of the external audio player
+//@audio The cached audio; may be null if unknown
 //@thumbnail Thumbnail of the audio; may be null if unknown
 //@duration Duration of the audio, in seconds
 //@width Expected width of the embedded player
 //@height Expected height of the embedded player
-linkPreviewTypeEmbeddedAudioPlayer url:string thumbnail:photo duration:int32 width:int32 height:int32 = LinkPreviewType;
+linkPreviewTypeEmbeddedAudioPlayer url:string audio:audio thumbnail:photo duration:int32 width:int32 height:int32 = LinkPreviewType;
 
 //@description The link is a link to a video player
 //@url URL of the external video player
