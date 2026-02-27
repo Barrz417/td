@@ -3260,7 +3260,7 @@ videoChat group_call_id:int32 has_participants:Bool default_participant_id:Messa
 //@business_bot_manage_bar Information about bar for managing a business bot in the chat; may be null if none
 //@video_chat Information about video chat of the chat
 //@pending_join_requests Information about pending join requests; may be null if none
-//@reply_markup_message_id Identifier of the message from which reply markup needs to be used; 0 if there is no default custom reply markup in the chat
+//@reply_markup_message_id Identifier of the message from which reply markup needs to be used; 0 if there is no reply markup in the chat
 //@draft_message A draft of a message in the chat; may be null if none
 //@client_data Application-specific data associated with the chat. (For example, the chat scroll position or local chat notification settings can be stored here.) Persistent if the message database is used
 chat id:int53 type:ChatType title:string photo:chatPhotoInfo accent_color_id:int32 background_custom_emoji_id:int64 upgraded_gift_colors:upgradedGiftColors profile_accent_color_id:int32 profile_background_custom_emoji_id:int64 permissions:chatPermissions last_message:message positions:vector<chatPosition> chat_lists:vector<ChatList> message_sender_id:MessageSender block_list:BlockList has_protected_content:Bool is_translatable:Bool is_marked_as_unread:Bool view_as_topics:Bool has_scheduled_messages:Bool can_be_deleted_only_for_self:Bool can_be_deleted_for_all_users:Bool can_be_reported:Bool default_disable_notification:Bool unread_count:int32 last_read_inbox_message_id:int53 last_read_outbox_message_id:int53 unread_mention_count:int32 unread_reaction_count:int32 notification_settings:chatNotificationSettings available_reactions:ChatAvailableReactions message_auto_delete_time:int32 emoji_status:emojiStatus background:chatBackground theme:ChatTheme action_bar:ChatActionBar business_bot_manage_bar:businessBotManageBar video_chat:videoChat pending_join_requests:chatJoinRequestsInfo reply_markup_message_id:int53 draft_message:draftMessage client_data:string = Chat;
@@ -3441,7 +3441,7 @@ inlineKeyboardButton text:string icon_custom_emoji_id:int64 style:ButtonStyle ty
 
 //@class ReplyMarkup @description Contains a description of a custom keyboard and actions that can be done with it to quickly reply to bots
 
-//@description Instructs application to remove the keyboard once this message has been received. This kind of keyboard can't be received in an incoming message; instead, updateChatReplyMarkup with message_id == 0 will be sent
+//@description Instructs application to remove the keyboard once this message has been received. This kind of keyboard can't be received in an incoming message; instead, updateChatReplyMarkup with reply_markup_message == null will be sent
 //@is_personal True, if the keyboard is removed only for the mentioned users or the target user of a reply
 replyMarkupRemoveKeyboard is_personal:Bool = ReplyMarkup;
 
@@ -9726,10 +9726,8 @@ updateChatNotificationSettings chat_id:int53 notification_settings:chatNotificat
 //@description The chat pending join requests were changed @chat_id Chat identifier @pending_join_requests The new data about pending join requests; may be null
 updateChatPendingJoinRequests chat_id:int53 pending_join_requests:chatJoinRequestsInfo = Update;
 
-//@description The default chat reply markup was changed. Can occur because new messages with reply markup were received or because an old reply markup was hidden by the user
-//@chat_id Chat identifier
-//@reply_markup_message_id Identifier of the message from which reply markup needs to be used; 0 if there is no default custom reply markup in the chat
-updateChatReplyMarkup chat_id:int53 reply_markup_message_id:int53 = Update;
+//@description The chat reply markup was changed @chat_id Chat identifier @reply_markup_message The message from which the reply markup must be used; may be null if there is no default reply markup in the chat
+updateChatReplyMarkup chat_id:int53 reply_markup_message:message = Update;
 
 //@description The chat background was changed @chat_id Chat identifier @background The new chat background; may be null if background was reset to default
 updateChatBackground chat_id:int53 background:chatBackground = Update;
