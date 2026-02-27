@@ -4011,11 +4011,12 @@ linkPreviewTypeEmbeddedAudioPlayer url:string audio:audio thumbnail:photo durati
 
 //@description The link is a link to a video player
 //@url URL of the external video player
+//@video The cached video; may be null if unknown
 //@thumbnail Thumbnail of the video; may be null if unknown
 //@duration Duration of the video, in seconds
 //@width Expected width of the embedded player
 //@height Expected height of the embedded player
-linkPreviewTypeEmbeddedVideoPlayer url:string thumbnail:photo duration:int32 width:int32 height:int32 = LinkPreviewType;
+linkPreviewTypeEmbeddedVideoPlayer url:string video:video thumbnail:photo duration:int32 width:int32 height:int32 = LinkPreviewType;
 
 //@description The link is a link to an audio file
 //@url URL of the audio file

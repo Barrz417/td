@@ -1776,37 +1776,32 @@ td_api::object_ptr<td_api::LinkPreviewType> WebPagesManager::get_link_preview_ty
         return td_api::make_object<td_api::linkPreviewTypeUnsupported>();
       }
     }
-    if (web_page->embed_type_ == "iframe") {
-      if (web_page->type_ == "video") {
+    if (web_page->type_ == "video") {
+      LOG_IF(ERROR,
+             web_page->document_.type != Document::Type::Unknown && web_page->document_.type != Document::Type::Video)
+          << "Receive wrong document for " << web_page->url_;
+      auto video = web_page->document_.type == Document::Type::Video
+                       ? td_->videos_manager_->get_video_object(web_page->document_.file_id)
+                       : nullptr;
+      if (web_page->embed_type_ == "iframe") {
         return td_api::make_object<td_api::linkPreviewTypeEmbeddedVideoPlayer>(
-            web_page->embed_url_, get_photo_object(td_->file_manager_.get(), web_page->photo_), web_page->duration_,
-            web_page->embed_dimensions_.width, web_page->embed_dimensions_.height);
-      }
-    } else {
-      // ordinary animation/audio/video
-      if (web_page->type_ == "video") {
-        LOG_IF(ERROR,
-               web_page->document_.type != Document::Type::Unknown && web_page->document_.type != Document::Type::Video)
-            << "Receive wrong document for " << web_page->url_;
-        auto video = web_page->document_.type == Document::Type::Video
-                         ? td_->videos_manager_->get_video_object(web_page->document_.file_id)
-                         : nullptr;
-        if (video != nullptr) {
-          return td_api::make_object<td_api::linkPreviewTypeVideo>(
-              std::move(video),
-              web_page->video_cover_photo_ ? get_photo_object(td_->file_manager_.get(), web_page->photo_) : nullptr,
-              get_video_start_timestamp(web_page->url_));
-        } else if (!web_page->embed_url_.empty()) {
-          return td_api::make_object<td_api::linkPreviewTypeExternalVideo>(
-              web_page->embed_url_, web_page->embed_type_, web_page->embed_dimensions_.width,
-              web_page->embed_dimensions_.height, web_page->duration_);
-        } else {
-          if (!web_page->photo_.is_empty()) {
-            return td_api::make_object<td_api::linkPreviewTypePhoto>(
-                get_photo_object(td_->file_manager_.get(), web_page->photo_));
-          }
-          return td_api::make_object<td_api::linkPreviewTypeUnsupported>();
+            web_page->embed_url_, std::move(video), get_photo_object(td_->file_manager_.get(), web_page->photo_),
+            web_page->duration_, web_page->embed_dimensions_.width, web_page->embed_dimensions_.height);
+      } else if (video != nullptr) {
+        return td_api::make_object<td_api::linkPreviewTypeVideo>(
+            std::move(video),
+            web_page->video_cover_photo_ ? get_photo_object(td_->file_manager_.get(), web_page->photo_) : nullptr,
+            get_video_start_timestamp(web_page->url_));
+      } else if (!web_page->embed_url_.empty()) {
+        return td_api::make_object<td_api::linkPreviewTypeExternalVideo>(
+            web_page->embed_url_, web_page->embed_type_, web_page->embed_dimensions_.width,
+            web_page->embed_dimensions_.height, web_page->duration_);
+      } else {
+        if (!web_page->photo_.is_empty()) {
+          return td_api::make_object<td_api::linkPreviewTypePhoto>(
+              get_photo_object(td_->file_manager_.get(), web_page->photo_));
         }
+        return td_api::make_object<td_api::linkPreviewTypeUnsupported>();
       }
     }
     LOG(ERROR) << "Have type = " << web_page->type_ << " for embedded " << web_page->url_;
