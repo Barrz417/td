@@ -524,15 +524,16 @@ class UploadProfilePhotoQuery final : public Td::ResultHandler {
       flags |= telegram_api::photos_uploadProfilePhoto::FILE_MASK;
       photo_input_file = std::move(input_file);
     }
+    bool is_me = user_id == td_->user_manager_->get_my_id();
     telegram_api::object_ptr<telegram_api::InputUser> input_user;
-    if (user_id != td_->user_manager_->get_my_id()) {
+    if (!is_me) {
       auto r_input_user = td_->user_manager_->get_input_user(user_id);
       if (r_input_user.is_error()) {
         return on_error(r_input_user.move_as_error());
       }
       input_user = r_input_user.move_as_ok();
     }
-    if (td_->user_manager_->is_user_bot(user_id) != td_->auth_manager_->is_bot()) {
+    if (td_->user_manager_->is_user_bot(user_id) != td_->auth_manager_->is_bot() || is_me) {
       if (input_user != nullptr) {
         flags |= telegram_api::photos_uploadProfilePhoto::BOT_MASK;
       }
@@ -557,16 +558,16 @@ class UploadProfilePhotoQuery final : public Td::ResultHandler {
     is_fallback_ = is_fallback;
     only_suggest_ = only_suggest;
 
+    bool is_me = user_id == td_->user_manager_->get_my_id();
     telegram_api::object_ptr<telegram_api::InputUser> input_user;
-    if (user_id != td_->user_manager_->get_my_id()) {
+    if (!is_me) {
       auto r_input_user = td_->user_manager_->get_input_user(user_id);
       if (r_input_user.is_error()) {
         return on_error(r_input_user.move_as_error());
       }
       input_user = r_input_user.move_as_ok();
     }
-    if (td_->user_manager_->is_user_bot(user_id) != td_->auth_manager_->is_bot() ||
-        user_id == td_->user_manager_->get_my_id()) {
+    if (td_->user_manager_->is_user_bot(user_id) != td_->auth_manager_->is_bot() || is_me) {
       int32 flags = telegram_api::photos_uploadProfilePhoto::VIDEO_EMOJI_MARKUP_MASK;
       if (input_user != nullptr) {
         flags |= telegram_api::photos_uploadProfilePhoto::BOT_MASK;
