@@ -3993,11 +3993,12 @@ linkPreviewTypeDocument document:document = LinkPreviewType;
 
 //@description The link is a link to an animation player
 //@url URL of the external animation player
+//@animation The cached animation; may be null if unknown
 //@thumbnail Thumbnail of the animation; may be null if unknown
 //@duration Duration of the animation, in seconds
 //@width Expected width of the embedded player
 //@height Expected height of the embedded player
-linkPreviewTypeEmbeddedAnimationPlayer url:string thumbnail:photo duration:int32 width:int32 height:int32 = LinkPreviewType;
+linkPreviewTypeEmbeddedAnimationPlayer url:string animation:animation thumbnail:photo duration:int32 width:int32 height:int32 = LinkPreviewType;
 
 //@description The link is a link to an audio player
 //@url URL of the external audio player
