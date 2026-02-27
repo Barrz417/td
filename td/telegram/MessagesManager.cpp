@@ -11899,7 +11899,7 @@ void MessagesManager::set_dialog_reply_markup(Dialog *d, MessageId message_id, c
 
   CHECK(!message_id.is_scheduled());
 
-  if (d->reply_markup_message_id != message_id) {
+  if (d->reply_markup_message_id != message_id || d->need_restore_reply_markup) {
     on_dialog_updated(d->dialog_id, "set_dialog_reply_markup");
   }
 
