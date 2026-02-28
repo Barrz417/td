@@ -2622,6 +2622,7 @@ void DialogParticipantManager::set_channel_participant_status_impl(ChannelId cha
                                                                    DialogParticipantStatus old_status,
                                                                    bool ignore_restricted_is_member,
                                                                    Promise<Unit> &&promise) {
+  old_status.set_rank(string());
   if (old_status == new_status && !old_status.is_creator()) {
     return promise.set_value(Unit());
   }
