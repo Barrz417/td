@@ -1697,11 +1697,11 @@ class MessageChangeCreator final : public MessageContent {
 class MessageNoForwardsToggle final : public MessageContent {
  public:
   MessageId request_message_id;
-  bool prev_value;
-  bool new_value;
+  bool prev_value = false;
+  bool new_value = false;
 
   MessageNoForwardsToggle() = default;
-  explicit MessageNoForwardsToggle(MessageId request_message_id, bool prev_value, bool new_value)
+  MessageNoForwardsToggle(MessageId request_message_id, bool prev_value, bool new_value)
       : request_message_id(request_message_id), prev_value(prev_value), new_value(new_value) {
   }
 
@@ -1712,12 +1712,12 @@ class MessageNoForwardsToggle final : public MessageContent {
 
 class MessageNoForwardsRequest final : public MessageContent {
  public:
-  bool is_expired;
-  bool prev_value;
-  bool new_value;
+  bool is_expired = false;
+  bool prev_value = false;
+  bool new_value = false;
 
   MessageNoForwardsRequest() = default;
-  explicit MessageNoForwardsRequest(bool is_expired, bool prev_value, bool new_value)
+  MessageNoForwardsRequest(bool is_expired, bool prev_value, bool new_value)
       : is_expired(is_expired), prev_value(prev_value), new_value(new_value) {
   }
 
