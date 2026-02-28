@@ -9552,7 +9552,7 @@ void ChatManager::on_get_channel_forbidden(telegram_api::channelForbidden &chann
   }
   if (c->is_monoforum && c->monoforum_channel_id == ChannelId()) {
     auto expected_monoforum_channel_id =
-        ChannelId(channel_id.get() - (G()->is_test_dc() ? 1300000000000ll : 1070000000000ll));
+        ChannelId(channel_id.get() - static_cast<int64>(G()->is_test_dc() ? 1300000000000ll : 1070000000000ll));
     if (expected_monoforum_channel_id.is_valid()) {
       c->monoforum_channel_id = expected_monoforum_channel_id;
       c->need_save_to_database = true;
